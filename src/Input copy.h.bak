@@ -1,0 +1,126 @@
+#pragma once
+
+#include "AiEsp32RotaryEncoder.h"
+#include "Arduino.h"
+#include "Constants.h"
+#include "SequencerTimer.h"
+#include <Bounce2.h>
+
+
+class Input
+{
+    public:
+        // Bounce2::Button buttons[Constants::NUMBER_OF_BUTTONS];
+        // Bounce2::Button fnButton;
+        AiEsp32RotaryEncoder rotaryEncoders[2];
+
+        Bounce2::Button rotaryEncoderButtons[Constants::NUMBER_OF_ROTARY_ENCODERS];
+
+        Input(SequencerTimer& _sequencerTimer): sequencerTimer(_sequencerTimer)
+        {
+        }
+
+        void begin()
+        {
+            instance = this;
+
+            // for (uint8_t i = 0; i < Constants::NUMBER_OF_BUTTONS; i++) {
+            //     buttons[i].attach(Constants::BUTTONS_PIN[i], INPUT_PULLUP);
+            //     buttons[i].interval(5);
+            //     buttons[i].setPressedState(LOW);
+            // }
+
+            for (uint8_t i = 0; i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+                rotaryEncoderButtons[i].attach(Constants::ROTARY_ENCODERS_PIN[i][2], INPUT_PULLUP);
+                rotaryEncoderButtons[i].interval(5);
+                rotaryEncoderButtons[i].setPressedState(LOW);
+            }
+
+            // fnButton.attach(Constants::FN_BUTTON_PIN, INPUT_PULLUP);
+            // fnButton.interval(5);
+            // fnButton.setPressedState(LOW);
+
+            for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+                rotaryEncoders[i] = AiEsp32RotaryEncoder(Constants::ROTARY_ENCODERS_PIN[i][0], Constants::ROTARY_ENCODERS_PIN[i][1], Constants::ROTARY_ENCODERS_PIN[i][2], -1, 4);
+
+                rotaryEncoders[i].begin();
+                rotaryEncoders[i].setup(readEncoderISR);
+                rotaryEncoders[i].setAcceleration(200);
+                rotaryEncoders[i].setBoundaries(0, 255, false);
+                rotaryEncoders[Constants::ROTARY_ENCODER_A].setEncoderValue(sequencerTimer.getVolume());
+            }
+
+            xTaskCreatePinnedToCore(
+                controlTask,
+                "InputTask",
+                8192,
+                this,
+                1,
+                &xHandle,
+                0
+            );
+        }
+
+        static void IRAM_ATTR readEncoderISR()
+        {
+            if (instance != nullptr) {
+                for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+                    instance->rotaryEncoders[i].readEncoder_ISR();
+                }
+            }
+        }
+
+        static void controlTask(void* pvParameters)
+        {
+            Input* input = static_cast<Input*>(pvParameters);
+            for (;;) {
+                if (input->rotaryEncoderButtons[Constants::ROTARY_ENCODER_A].pressed() && !input->rotaryEncoderButtons[Constants::ROTARY_ENCODER_A].isPressed()) {
+                    input->rotaryEncoders[Constants::ROTARY_ENCODER_A].setBoundaries(0, 255, false);
+                    input->rotaryEncoders[Constants::ROTARY_ENCODER_A].setEncoderValue(input->sequencerTimer.getVolume());
+                }
+
+                if (!input->rotaryEncoderButtons[Constants::ROTARY_ENCODER_A].pressed() && input->rotaryEncoderButtons[Constants::ROTARY_ENCODER_A].isPressed()) {
+                    input->rotaryEncoders[Constants::ROTARY_ENCODER_A].setBoundaries(1, 999, false);
+                    input->rotaryEncoders[Constants::ROTARY_ENCODER_A].setEncoderValue(input->sequencerTimer.getBpm());
+                }
+
+                Serial.println("ENcoder pressed");
+                Serial.println(input->rotaryEncoderButtons[Constants::ROTARY_ENCODER_A]);
+
+                if (input->rotaryEncoders[Constants::ROTARY_ENCODER_A].encoderChanged()) {
+                    if (input->rotaryEncoderButtons[Constants::ROTARY_ENCODER_A].isPressed()) {
+                        input->sequencerTimer.setBpm(input->rotaryEncoders[Constants::ROTARY_ENCODER_A].readEncoder());
+                    } else {
+                        input->sequencerTimer.setVolume(input->rotaryEncoders[Constants::ROTARY_ENCODER_A].readEncoder());
+                    }
+                }
+
+                for (uint8_t i = 0;i<Constants::NUMBER_OF_BUTTONS;i++) {
+                    input->buttons[i].update();
+                    // <Button>.pressed() RETURNS true IF THE STATE CHANGED
+                    // AND THE CURRENT STATE MATCHES <Button>.setPressedState(<HIGH or LOW>);
+                    // WHICH IS LOW IN THIS EXAMPLE AS SET WITH button.setPressedState(LOW); IN setup()
+                    if (input->buttons[i].isPressed()) {
+                        input->pressedStepButton = i;
+                        // Serial.println("PRESSED");
+                        // Serial.println(i);
+
+                        // input->sequencerTimer.toggleStep(i);
+                    }
+                    if (input->buttons[i].released()) {
+                        input->sequencerTimer.toggleStep(i);
+                        input->pressedStepButton = -1;
+                    }
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
+        }
+    
+    private:
+        TaskHandle_t xHandle = nullptr;
+        SequencerTimer& sequencerTimer;
+        static Input* instance;
+        int8_t pressedStepButton = -1;
+};
+Input* Input::instance = nullptr;

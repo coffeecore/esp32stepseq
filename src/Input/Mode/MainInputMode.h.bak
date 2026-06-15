@@ -1,0 +1,347 @@
+#pragma once
+
+#include "SequencerTimer.h"
+#include "Input/Input.h"
+#include "Input/InputMode.h"
+#include "Display/Display.h"
+
+
+class MainInputMode : public InputMode
+{
+public:
+    MainInputMode(
+        Input& _input,
+        SequencerTimer& _sequencerTimer,
+        Display& _display
+    )
+        : InputMode(_input),
+          sequencerTimer(_sequencerTimer),
+          display(_display)
+    {
+    }
+
+    void onEnter() override
+    {
+        Serial.println("=== MAIN MODE ===");
+
+        input.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
+        input.setEncoderValue(ControlId::Encoder1, sequencerTimer.volume);
+    }
+
+    void onExit() override
+    {
+        Serial.println(">>> MAIN MODE <<<");
+
+        for (uint8_t i = 0;i<static_cast<uint8_t>(ControlId::ControlCount);i++) {
+            buttonPressed[i] = false;
+            buttonHold[i] = false;
+        }
+    }
+
+//     void handleEvent(InputEventType type, ControlId control, int delta)
+// {
+//     switch(type)
+//     {
+//         case InputEventType::ButtonPressed:
+//             if (isFn(control))
+//             {
+//                 m_fn.pressed = true;
+//                 m_fn.holdTriggered = false;
+//                 m_fn.stepUsed = false;
+//                 m_currentFn = control;
+//             }
+//             break;
+
+//         case InputEventType::ButtonHold:
+//             if (isFn(control) && control == m_currentFn)
+//             {
+//                 m_fn.holdTriggered = true;
+//             }
+//             break;
+
+//         case InputEventType::ButtonRelease:
+//             if (isFn(control) && control == m_currentFn)
+//             {
+//                 if (m_fn.holdTriggered && !m_fn.stepUsed)
+//                     autreAction(control); // Hold sans step/encodeur
+
+//                 // reset Fn
+//                 m_fn.pressed = false;
+//                 m_fn.holdTriggered = false;
+//                 m_fn.stepUsed = false;
+//             }
+//             break;
+
+//         // nouvel event : encodeur tourné
+//         case InputEventType::EncoderTurned:
+//             if (!isEncoder(control)) break;
+
+//             if (m_fn.pressed)
+//             {
+//                 m_fn.stepUsed = true; // comme si un Step avait été utilisé
+//                 actionA(control, delta); // action modifiée par Fn
+//             }
+//             else
+//             {
+//                 actionB(control, delta); // action normale
+//             }
+//             break;
+//     }
+// }
+
+    void handleEvent(const InputEvent& event) override
+    {
+        switch(event.type) {
+
+            // case InputEventType::ButtonPressed:
+            //     Serial.print("[Input][MAIN MODE] Button pressed: ");
+            //     Serial.println(event.id);
+
+            //     break;
+
+            // case InputEventType::ButtonHold:
+            //     Serial.print("[Input][MAIN MODE] Button hold: ");
+            //     Serial.println(event.id);
+
+            //     buttonHold[event.id] = true;
+            //     if (input.getStep(event.id) != -1) {
+            //         display.setMode(DisplayModes::Step);
+            //         pendingMode = InputModes::Step;
+            //     }
+
+            //     break;
+
+            // case InputEventType::ButtonReleased:
+            //     Serial.print("[Input][MAIN MODE] Button relase: ");
+            //     Serial.println(event.id);
+
+            //     if (buttonHold[event.id]) {
+            //         if (pendingMode != InputModes::None){
+            //             input.setMode(pendingMode);
+            //             pendingMode = InputModes::None;
+            //         }
+            //     } else {
+            //         if (input.getStep(event.id) != -1) {
+            //             uint8_t row = input.getRow(event.id);
+            //             uint8_t col = input.getColumn(event.id);
+            //             sequencerTimer.toggleStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, row-1, col);
+            //         }
+            //     }
+
+            //     break;
+        
+            // case InputEventType::ButtonPressed:
+            //     if (event.control == ControlId::Fn2) {
+            //         buttonPressed[static_cast<uint8_t>(event.control)] = true;
+            //         input.setEncoderBoundaries(event.control, 0, 999, false);
+            //         input.setEncoderValue(event.control, sequencerTimer.bpm);
+            //     }
+
+            //     if (event.control == ControlId::Fn0) {
+            //         buttonPressed[static_cast<uint8_t>(event.control)] = true;
+            //     }
+
+            //     if (isStep(event.control)) {
+            //         buttonPressed[static_cast<uint8_t>(event.control)] = true;
+            //         stepWasPressed = true;
+            //     }
+
+            //     break;
+
+            // case InputEventType::ButtonHold:
+            //     buttonHold[static_cast<uint8_t>(event.control)] = true;
+
+            // case InputEventType::ButtonReleased:
+            //     if (event.control == ControlId::Fn2) {
+            //         input.setEncoderBoundaries(event.control, 0, 255, false);
+            //         input.setEncoderValue(event.control, sequencerTimer.volume);
+            //     }
+
+            //     if (buttonPressed[static_cast<uint8_t>(ControlId::Fn0)]) {
+
+            //     }
+
+            //     if (isStep(event.control)) {
+            //         stepWasPressed = false;
+            //     }
+
+            //     buttonHold[static_cast<uint8_t>(event.control)] = false;
+            //     buttonPressed[static_cast<uint8_t>(event.control)] = false;
+
+            //     break;
+
+            // case InputEventType::EncoderTurned:
+            //     Serial.print("[Input][MAIN MODE] Encoder value: ");
+            //     Serial.println(event.id);
+            //     Serial.println(event.value);
+                    
+            //     if (event.control == ControlId::Encoder0) {
+            //         if (buttonPressed[static_cast<uint8_t>(event.control)]) {
+            //             sequencerTimer.setBpm(event.value);
+            //         } else {
+            //             sequencerTimer.setVolume(event.value);
+            //         }
+            //     }
+
+            //     break;
+            
+            // case InputEventType::EncoderPressed:
+            //     Serial.print("[Input][MAIN MODE] Encoder pressed: ");
+            //     Serial.println(event.id);
+
+            //     encoderPressed[event.id] = true;
+            //     input.setEncoderBoundaries(event.id, 0, 999, false);
+            //     input.setEncoderValue(event.id, sequencerTimer.bpm);
+
+            //     break;
+            
+            // case InputEventType::EncoderReleased:
+            //     Serial.print("[Input][MAIN MODE] Encoder release: ");
+            //     Serial.println(event.id);
+
+            //     encoderPressed[event.id] = false;
+            //     input.setEncoderBoundaries(event.id, 0, 255, false);
+            //     input.setEncoderValue(event.id, sequencerTimer.volume);
+
+
+            //     break;
+
+            default:
+                break;
+        }
+    }
+
+    private:
+        SequencerTimer& sequencerTimer;
+        Display& display;
+
+        // bool buttonPressed[static_cast<uint8_t>(ControlId::ControlCount)] = {};
+        // bool buttonHold[static_cast<uint8_t>(ControlId::ControlCount)] = {};
+        // bool stepWasPressed = false;
+
+        FnState m_fn; // un seul Fn à gérer
+        ControlId m_currentFn; // quel Fn est pressé
+
+        InputModes pendingMode = InputModes::None;
+};
+
+
+// GOOD CODE
+
+
+struct FnState
+{
+    bool pressed = false;
+    bool holdTriggered = false;
+    bool stepUsed = false; // Step ou Encodeur utilisé pendant le Fn
+};
+
+struct StepState
+{
+    bool pressed = false;
+    ControlId stepId; // Step actuellement pressé
+};
+
+FnState m_fn;
+ControlId m_currentFn;
+
+StepState m_step;
+
+// Helpers
+constexpr bool isFn(ControlId c)
+{
+    return c >= ControlId::Fn0 && c <= ControlId::Fn7;
+}
+
+constexpr bool isStep(ControlId c)
+{
+    return c >= ControlId::Step0 && c <= ControlId::Step3;
+}
+
+constexpr bool isEncoder(ControlId c)
+{
+    return c == ControlId::Encoder0 || c == ControlId::Encoder1;
+}
+
+uint8_t fnIndex(ControlId c)
+{
+    return static_cast<uint8_t>(c) - static_cast<uint8_t>(ControlId::Fn0);
+}
+
+// Main event handler
+void handleEvent(InputEventType type, ControlId control, int delta = 0)
+{
+    switch(type)
+    {
+        case InputEventType::ButtonPressed:
+        {
+            if (isFn(control))
+            {
+                m_fn.pressed = true;
+                m_fn.holdTriggered = false;
+                m_fn.stepUsed = false;
+                m_currentFn = control;
+            }
+            else if (isStep(control))
+            {
+                m_step.pressed = true;
+                m_step.stepId = control;
+
+                if (m_fn.pressed)
+                    m_fn.stepUsed = true; // Step modifie le Fn
+            }
+            break;
+        }
+
+        case InputEventType::ButtonHold:
+        {
+            if (isFn(control) && control == m_currentFn)
+                m_fn.holdTriggered = true;
+            break;
+        }
+
+        case InputEventType::ButtonRelease:
+        {
+            if (isFn(control) && control == m_currentFn)
+            {
+                // Fn hold action
+                if (m_fn.holdTriggered && !m_fn.stepUsed)
+                    autreAction(control);
+
+                m_fn.pressed = false;
+                m_fn.holdTriggered = false;
+                m_fn.stepUsed = false;
+            }
+            else if (isStep(control) && m_step.pressed && control == m_step.stepId)
+            {
+                // Step action déclenchée au release
+                if (m_fn.pressed)
+                    changePattern(control, m_currentFn); // Step + Fn
+                else
+                    changePattern(control);             // Step seul
+
+                m_step.pressed = false;
+            }
+            break;
+        }
+
+        case InputEventType::EncoderTurned:
+        {
+            if (!isEncoder(control)) break;
+
+            if (m_fn.pressed)
+            {
+                m_fn.stepUsed = true;        // consomme le Hold du Fn
+                actionA(control, delta);     // Encodeur + Fn
+            }
+            else
+            {
+                actionB(control, delta);     // Encodeur seul
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+}
