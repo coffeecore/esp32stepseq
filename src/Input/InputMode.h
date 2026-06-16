@@ -20,12 +20,15 @@ typedef struct
     bool holdTriggered = false;
     bool modifierUsed = false;
 
+    FnMask pressCombo = 0;
     FnMask holdCombo = 0;
 } FnState;
 
 typedef struct 
 {
     bool pressed = false;
+    bool holdTriggered = false;
+    bool stepUsed = false;
 
     ControlId stepId;
 
@@ -73,24 +76,137 @@ constexpr FnMask FN7 = 1u << 7;
 class InputMode
 {
     public:
-        TaskHandle_t displayTaskHandle = nullptr;
-
-        FnState fnState;
-        StepState stepState;
-
-        bool anyFnPressed()
-        {
-            return fnState.pressedMask != 0;
-        }
-
         explicit InputMode(Input& _input)
             : input(_input)
         {
         }
 
         virtual void onEnter() {}
+
         virtual void onExit() {}
-        virtual void handleEvent(const InputEvent& event) = 0;
+
+        virtual void handleEvent(const InputEvent& event)
+        {
+            switch(event.type) {
+                case InputEventType::ButtonPressed:
+                {
+                    // We save pressed Fn key in bitmask
+                    // If step key, if bitmask Fn set we take it
+                    if (isFn(event.control)) {
+                        fnState.pressedMask |= fnBit(event.control);
+
+                        fnState.pressCombo = fnState.pressedMask;
+                    } else if (isStep(event.control)) {
+                        stepState.pressed = true;
+                        stepState.stepId = event.control;
+
+                        // Snapshot de la combinaison
+                        stepState.fnCombo = fnState.pressedMask;
+
+                        if (stepState.fnCombo != 0) {
+                            fnState.modifierUsed = true;
+                        }
+                    }
+
+                    break;
+                }
+
+                case InputEventType::ButtonHold:
+                {
+                    // Just check if Fn key is hold
+                    // We get bitmask to know if many pressed
+                    if (isFn(event.control)) {
+                        fnState.holdTriggered = true;
+
+                        // Snapshot de la combinaison
+                        fnState.holdCombo = fnState.pressedMask;
+
+                        if (!fnState.modifierUsed) {
+                            fnHoldAction(event, fnState.holdCombo);
+                        }
+                    } else if(isStep(event.control)) {
+                        stepState.holdTriggered = true;
+
+                        stepHoldAction(event, stepState.fnCombo);
+                    }
+
+                    break;
+                }
+
+                case InputEventType::ButtonReleased:
+                {
+                    // If a step released and was the pressed step
+                    // We have fnCombo so we can do something different 
+                    if (isStep(event.control) &&
+                        stepState.pressed &&
+                        event.control == stepState.stepId
+                    )
+                    {
+                        if (!stepState.stepUsed) {
+                            if (stepState.holdTriggered) {
+                                stepHoldReleaseAction(event, stepState.fnCombo);
+                            } else {
+                                stepReleaseAction(event, stepState.fnCombo);
+                            }
+                        }
+
+                        stepState.pressed = false;
+                        stepState.holdTriggered = false;
+                        stepState.fnCombo = 0;
+                        stepState.stepUsed = false;
+                    } else if (isFn(event.control)) {
+                        fnState.pressedMask &= ~fnBit(event.control);
+
+                        // Dernier Fn relâché
+                        // If no bit mask, fn key hold and we didnt press step key we execute hold action of fn key
+                        if (fnState.pressedMask == 0) {
+                            if (fnState.holdTriggered && !fnState.modifierUsed) {
+                                fnHoldReleaseAction(
+                                    event,
+                                    fnState.holdCombo);
+                            } else if (!fnState.modifierUsed) {
+                                fnReleaseAction(
+                                    event,
+                                    fnState.pressCombo);
+                            }
+
+                            fnState.holdTriggered = false;
+                            fnState.modifierUsed = false;
+                            fnState.pressCombo = 0;
+                            fnState.holdCombo = 0;
+                        }
+                    }
+
+                    break;
+                }
+
+                case InputEventType::EncoderTurned:
+                {
+                    // No encoder nothing to do
+                    if (!isEncoder(event.control)) {
+                        break;
+                    }
+
+                    // We have bitmask because we pressed fn key before, we can do something based on or not
+                    encoderAction(event, fnState.pressedMask);
+
+                    // We use rotary, we mustnot execute fn hold action
+                    if (fnState.pressedMask != 0) {
+                        fnState.modifierUsed = true;
+                    }
+
+                    if (stepState.pressed) {
+                        stepState.stepUsed = true;
+                    }
+
+                    break;
+                }
+
+
+                default:
+                    break;
+            }
+        }
 
         void attachDisplayTask(TaskHandle_t handle)
         {
@@ -105,7 +221,26 @@ class InputMode
         }
     
     protected:
+        virtual void stepReleaseAction(const InputEvent& event, FnMask fnMask) {}
+
+        virtual void fnReleaseAction(const InputEvent& event, FnMask fnMask) {}
+
+        virtual void fnHoldAction(const InputEvent& event, FnMask fnMask) {}
+
+        virtual void encoderAction(const InputEvent& event, FnMask fnMask) {}
+
+        virtual void stepHoldAction(const InputEvent& event, FnMask fnMask) {}
+
+        virtual void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask) {}
+
+        virtual void stepHoldReleaseAction(const InputEvent& event, FnMask fnMask) {}
+
+    protected:
         Input& input;
+        TaskHandle_t displayTaskHandle = nullptr;
+
+        FnState fnState;
+        StepState stepState;
 };
 
 /*
