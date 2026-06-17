@@ -18,7 +18,7 @@ public:
 
     void handleEvent() override
     {
-        Serial.println("[Display][MAIN MODE] Handle");
+        // Serial.println("[Display][MAIN MODE] Handle");
 
         display.clear();
 

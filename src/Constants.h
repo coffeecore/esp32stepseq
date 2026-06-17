@@ -54,22 +54,22 @@ namespace Constants
 
   constexpr uint8_t ROTARY_ENCODER_ONE_A = 32;
   constexpr uint8_t ROTARY_ENCODER_ONE_B = 33;
-  constexpr uint8_t ROTARY_ENCODER_ONE_SW = 25;
+  // constexpr uint8_t ROTARY_ENCODER_ONE_SW = 25;
 
   constexpr uint8_t ROTARY_ENCODER_TWO_A = 26;
   constexpr uint8_t ROTARY_ENCODER_TWO_B = 27;
-  constexpr uint8_t ROTARY_ENCODER_TWO_SW = 14;
+  // constexpr uint8_t ROTARY_ENCODER_TWO_SW = 14;
 
   constexpr uint8_t ROTARY_ENCODERS_PIN[NUMBER_OF_ROTARY_ENCODERS][3] = {
     {
       ROTARY_ENCODER_ONE_A,
-      ROTARY_ENCODER_ONE_B,
-      ROTARY_ENCODER_ONE_SW
+      ROTARY_ENCODER_ONE_B
+      // ROTARY_ENCODER_ONE_SW
     },
     {
       ROTARY_ENCODER_TWO_A,
-      ROTARY_ENCODER_TWO_B,
-      ROTARY_ENCODER_TWO_SW
+      ROTARY_ENCODER_TWO_B
+      // ROTARY_ENCODER_TWO_SW
     }
   };
 
@@ -86,7 +86,7 @@ namespace Constants
       { 'U', 'V', 'W', 'X' }
   };
 
-  byte ROWS_PINS[ROWS] = {19, 18, 5, 17, 16,  25}; //connect to the row pinouts of the keypad
+  byte ROWS_PINS[ROWS] = {25, 19, 18, 5, 17, 16}; //connect to the row pinouts of the keypad
   byte COLS_PINS[COLS] = {4, 23, 13, 15};
 
   // constexpr uint8_t FN_BUTTON_PIN = 4;

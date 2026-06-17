@@ -34,64 +34,106 @@ class MainInputMode : public InputMode
         }
 
     protected:
-        void stepReleaseAction(const InputEvent& event, FnMask fnMask) override
-        {
-            switch(fnMask)
-            {
-                case 0:
-                {
-                    uint8_t row = static_cast<uint8_t>(event.control) / 4;
-                    uint8_t col = static_cast<uint8_t>(event.control) % 4;
-                    sequencerTimer.toggleStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, row, col);
+        // void stepReleaseAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        //     // switch(fnMask)
+        //     // {
+        //     //     case 0:
+        //     //     {
+        //     //         uint8_t row = static_cast<uint8_t>(event.control) / 4;
+        //     //         uint8_t col = static_cast<uint8_t>(event.control) % 4;
+        //     //         sequencerTimer.toggleStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, row, col);
 
-                    break;
-                }
+        //     //         break;
+        //     //     }
 
-                case FN4:
-                    // selectPattern(step);
-                    break;
+        //     //     case FN4:
+        //     //         // selectPattern(step);
+        //     //         break;
 
-                case FN5:
-                    // selectTrack(step);
-                    break;
+        //     //     case FN5:
+        //     //         // selectTrack(step);
+        //     //         break;
 
-                case (FN4 | FN5):
-                    // selectBank(step);
-                    break;
+        //     //     case (FN4 | FN5):
+        //     //         // selectBank(step);
+        //     //         break;
 
-                default:
-                    break;
-            }
-        }
+        //     //     default:
+        //     //         break;
+        //     // }
+        // }
 
-        void fnReleaseAction(const InputEvent& event, FnMask fnMask) override
-        {
-        }
+        // void fnReleaseAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        //     //     Serial.println("Mask");
+        //     // Serial.println(fnMask);
+        //     // switch(fnMask)
+        //     // {
+        //     //     case FN3:
+        //     //     {
+        //     //         Serial.println("FN3");
+        //     //         Serial.println(static_cast<uint8_t>(event.control));
 
-        void fnHoldAction(const InputEvent& event, FnMask fnMask) override
-        {
-        }
+        //     //         return;
+        //     //     }
+        //     //     case FN2|FN3:
+        //     //     {
+        //     //         Serial.println("FN2 3");
+        //     //         Serial.println(static_cast<uint8_t>(event.control));
 
-        void encoderAction(const InputEvent& event, FnMask fnMask) override
-        {
-            if (stepState.pressed)
-            {
-                return;
-            }
-            // global fn pas step
-        }
+        //     //         return;
+        //     //     }
+        //     //     default:
+        //     //         break;
+        //     // }
+        // }
 
-        void stepHoldAction(const InputEvent& event, FnMask fnMask) override
-        {
-        }
+        // void fnHoldAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        // }
 
-        void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
-        {
-        }
+        // void encoderAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        //     if (stepState.pressed)
+        //     {
+        //         return;
+        //     }
+        //     // global fn pas step
+        // }
 
-        void stepHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
-        {
-        }
+        // void stepHoldAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        // }
+
+        // void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        //     // Serial.println("HOLDMask");
+        //     // Serial.println(fnMask);
+        //     // switch(fnMask)
+        //     // {
+        //     //     case FN3:
+        //     //     {
+        //     //         Serial.println("HOLDFN3");
+        //     //         Serial.println(static_cast<uint8_t>(event.control));
+
+        //     //         return;
+        //     //     }
+        //     //     case FN2|FN3:
+        //     //     {
+        //     //         Serial.println("HOLDFN2 3");
+        //     //         Serial.println(static_cast<uint8_t>(event.control));
+
+        //     //         return;
+        //     //     }
+        //     //     default:
+        //     //         break;
+        //     // }
+        // }
+
+        // void stepHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
+        // {
+        // }
 
     private:
         SequencerTimer& sequencerTimer;

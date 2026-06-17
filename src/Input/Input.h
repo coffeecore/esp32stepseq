@@ -124,11 +124,11 @@ class Input
         {
             instance = this;
 
-            for (uint8_t i = 0; i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
-                rotaryEncoderButtons[i].attach(Constants::ROTARY_ENCODERS_PIN[i][2], INPUT_PULLUP);
-                rotaryEncoderButtons[i].interval(5);
-                rotaryEncoderButtons[i].setPressedState(LOW);
-            }
+            // for (uint8_t i = 0; i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+            //     rotaryEncoderButtons[i].attach(Constants::ROTARY_ENCODERS_PIN[i][2], INPUT_PULLUP);
+            //     rotaryEncoderButtons[i].interval(5);
+            //     rotaryEncoderButtons[i].setPressedState(LOW);
+            // }
 
             for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
                 rotaryEncoders[i] = AiEsp32RotaryEncoder(Constants::ROTARY_ENCODERS_PIN[i][0], Constants::ROTARY_ENCODERS_PIN[i][1], Constants::ROTARY_ENCODERS_PIN[i][2], -1, 4);
@@ -283,19 +283,28 @@ class Input
 
                             if (ks == KeyState::PRESSED) {
                                 e.type = InputEventType::ButtonPressed;
-                                Serial.println("Event marix");
-                                Serial.println(i);
-                                Serial.println(key);
+                                // Serial.println("Event marix");
+                                // Serial.println(i);
+                                // Serial.println(key);
+                                // Serial.println(e.id);
+                                // Serial.println(static_cast<uint8_t>(e.control));
+                                // Serial.println("Event marix end");
                                 instance->pushEvent(e);
                             }
                             if (ks == KeyState::HOLD) {
-                                InputEvent e;
+                                // InputEvent e;
                                 e.type = InputEventType::ButtonHold;
                                 instance->pushEvent(e);
                             }
                             if (ks == KeyState::RELEASED) {
-                                InputEvent e;
+                                // InputEvent e;
                                 e.type = InputEventType::ButtonReleased;
+                                // Serial.println("Event marix rel");
+                                // Serial.println(i);
+                                // Serial.println(key);
+                                // Serial.println(e.id);
+                                // Serial.println(static_cast<uint8_t>(e.control));
+                                // Serial.println("Event marix rel end");
                                 instance->pushEvent(e);
                             }
                         }
