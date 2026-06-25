@@ -47,6 +47,13 @@ typedef struct {
     uint8_t instrument = 0;
 } Track;
 
+enum class PlayState
+{
+    Play,
+    Pause,
+    Stop
+};
+
 class SequencerTimer
 {
     public:
@@ -58,6 +65,8 @@ class SequencerTimer
         uint8_t selectedInstrument = 0;
         uint8_t trackCounts = 0;
         uint8_t quarterNoteCounts = 0;
+
+        PlayState playState = PlayState::Play;
 
         Track tracks[Constants::MAX_TRACKS];
         uint8_t ppqn = Constants::DEFAULT_PPQN;
@@ -122,7 +131,7 @@ class SequencerTimer
             };
 
             const char* note = names[midi % 12];
-            uint8_t octave = (midi / 12) - 1;
+            int8_t octave = (midi / 12) - 1;
 
             if (note[1] == '\0') {
                 snprintf(buffer, bufferSize, "%s-%d", note, octave);
@@ -138,7 +147,7 @@ class SequencerTimer
         /**
          * -- Getter/Setter selected ---
          */
-        void setStepNote(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
+        void setStepNoteMidi(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
         {
             Step& step = tracks[trackIndex]
                     .quarterNotes[quarterNoteIndex]
@@ -146,7 +155,41 @@ class SequencerTimer
            step.note = value;
             midiToName(value, step.noteStr, sizeof(step.noteStr));
             step.noteFreq = midiToFreq(value);
+        }
 
+        void setStepNote(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t note, int8_t octave)
+        {
+            Step& step = tracks[trackIndex]
+                    .quarterNotes[quarterNoteIndex]
+                    .steps[stepIndex];
+            uint8_t value = note + (octave+1) * 12;
+            step.note = value;
+            midiToName(value, step.noteStr, sizeof(step.noteStr));
+            step.noteFreq = midiToFreq(value);
+        }
+
+        void setStepLength(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
+        {
+            QuarterNote& qn = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+            Step& step = qn.steps[stepIndex];
+
+            if (value > qn.ticksByStep || value <= 0) {
+                return;
+            }
+
+            step.length = value;
+        }
+
+        void setStepInstrument(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, int8_t value)
+        {
+            QuarterNote& qn = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+            Step& step = qn.steps[stepIndex];
+
+            if (value > 15 || value < -1) {
+                return;
+            }
+
+            step.instrument = value;
         }
 
         void setSelectedTrack(uint8_t trackIndex)
@@ -251,6 +294,31 @@ class SequencerTimer
             volume = _volume;
         }
 
+        void togglePause()
+        {
+            if (playState != PlayState::Pause) {
+                playState = PlayState::Pause;
+
+                return;
+            }
+
+            playState = PlayState::Play;
+        }
+
+        void toggleStop()
+        {
+            if (playState != PlayState::Stop) {
+                playState = PlayState::Stop;
+
+                currentTick = 0;
+                currentQuarterNote = 0;
+
+                return;
+            }
+
+            playState = PlayState::Play;
+        }
+
         // void setPan(int8_t _pan)
         // {
         //     if (_pan < -10) {
@@ -290,11 +358,16 @@ class SequencerTimer
 
         void addQuarterNote()
         {
-            if (quarterNoteCounts >= 64) {
-                return;
+            if (quarterNoteCounts < 64) {
+                quarterNoteCounts++;
             }
+        }
 
-            quarterNoteCounts++;
+        void removeQuarterNote()
+        {
+            if (quarterNoteCounts > 0) {
+                quarterNoteCounts--;
+            }
         }
 
         void addStep(uint8_t trackIndex, uint8_t quarterNoteIndex)
@@ -399,6 +472,10 @@ class SequencerTimer
 
                 while (pending--)
                 {
+                    if (seq->playState != PlayState::Play) {
+                        continue;
+                    }
+
                     bool quarterChanged = false;
                      if (seq->currentTick >= seq->ppqn) {
                         seq->currentTick = 0;
@@ -513,16 +590,16 @@ class SequencerTimer
         void triggerStepOff(Step& step)
         {
             // MIDI note off / stop voice
-            // Serial.print("NOTE OFF : ");
-            // Serial.println(millis());
+            Serial.print("NOTE OFF : ");
+            Serial.println(millis());
         }
 
 
         void triggerStepOn(Step& step)
         {
             // MIDI / GPIO / synth trigger
-            // Serial.print("NOTE ON : ");
-            // Serial.println(millis());
+            Serial.print("NOTE ON : ");
+            Serial.println(millis());
         }
     
     private:

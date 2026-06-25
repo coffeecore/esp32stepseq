@@ -22,6 +22,9 @@ class MainInputMode : public InputMode
 
         void initEncoder()
         {
+            /**
+             * @todo constant for volume min max, bpm min max
+             */
             input.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
             input.setEncoderValue(ControlId::Encoder0, sequencerTimer.volume);
 
@@ -43,14 +46,6 @@ class MainInputMode : public InputMode
     protected:
         void fnReleasedAlways(const InputEvent& event, FnMask fnMask) override
         {
-            // Le test avec & est donc généralement celui qu'on utilise pour savoir si une touche particulière faisait partie d'une combinaison.
-            // if (fnMask & FN4) {
-            //     initEncoder();
-            // }
-
-            // if (fnMask & FN5) {
-            //     initEncoder();
-            // }
             initEncoder();
         }
 
@@ -63,16 +58,43 @@ class MainInputMode : public InputMode
         {
             ControlId pressedStep = event.control;
 
+            uint8_t row = (static_cast<uint8_t>(event.control)) / 4;
+            uint8_t col = (static_cast<uint8_t>(event.control)) % 4;
+
+            QuarterNote& qn = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote];
+
+            Step& step = qn.steps[col];
+
             switch (fnMask)
             {
                 case 0:
-                    /** @todo set encoder 0 value and range to choose note */
-                    /** @todo set encoder 1 value and range to choose octave */
+                {
+                    /**
+                     * @todo constant for note range
+                     * @implemented set encoder 0 value and range to choose note
+                     */
+                    input.setEncoderBoundaries(ControlId::Encoder0, 0, 11, true);
+                    input.setEncoderValue(ControlId::Encoder0, step.note % 12);
+                    /**
+                     * @todo constant for octave range
+                     * @implemented set encoder 1 value and range to choose octave
+                     */
+                    input.setEncoderBoundaries(ControlId::Encoder1, -1, 9, true);
+                    input.setEncoderValue(ControlId::Encoder1, step.note / 12 - 1);
 
                     break;
+                }
                 case FN4:
                     /** @todo set encoder 0 value and range to choose length */
-                    /** @todo set encoder 1 value and range to choose instrument */
+                    input.setEncoderBoundaries(ControlId::Encoder0, 1, qn.ticksByStep, false);
+                    input.setEncoderValue(ControlId::Encoder0, step.length);
+
+                    /** 
+                     * @todo constant max instrument number
+                     * @todo set encoder 1 value and range to choose instrument
+                     */
+                    input.setEncoderBoundaries(ControlId::Encoder1, -1, 15, false);
+                    input.setEncoderValue(ControlId::Encoder1, step.instrument);
 
                     break;
             
@@ -140,7 +162,8 @@ class MainInputMode : public InputMode
             switch (fnMask)
             {
                 case FN0:
-                    /** @todo toggle play pause */
+                    /** @implemented toggle play pause */
+                    sequencerTimer.togglePause();
 
                     break;
                 case FN1:
@@ -152,7 +175,8 @@ class MainInputMode : public InputMode
                     break;
 
                 case FN4 | FN7:
-                    /** @todo add quarter note */
+                    /** @implemented add quarter note */
+                    sequencerTimer.addQuarterNote();
                     break;
 
                 case FN5:
@@ -179,7 +203,8 @@ class MainInputMode : public InputMode
             switch (fnMask)
             {
                 case FN0:
-                    /** @todo toggle play stop */
+                    /** @implemented toggle play stop */
+                    sequencerTimer.toggleStop();
 
                     break;
                 
@@ -193,6 +218,7 @@ class MainInputMode : public InputMode
 
                 case FN4 | FN7:
                     /** @todo remove last quarter note */
+                    sequencerTimer.removeQuarterNote();
                     break;
 
                 case FN5 | FN7:
@@ -207,6 +233,46 @@ class MainInputMode : public InputMode
         void encoderAction(const InputEvent& event, FnMask fnMask)
         {
             ControlId encoder = event.control;
+
+            if (stepState.pressed) {
+                uint8_t row = (static_cast<uint8_t>(stepState.stepId)) / 4;
+                uint8_t col = (static_cast<uint8_t>(stepState.stepId)) % 4;
+
+                Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+
+                switch (fnMask)
+                {
+                    case 0:
+                    {   
+                        if (encoder == ControlId::Encoder0) {
+                            sequencerTimer.setStepNote(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, event.value, step.note / 12 - 1);
+                        }
+
+                        if (encoder == ControlId::Encoder1) {
+                            sequencerTimer.setStepNote(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, step.note % 12, event.value);
+                        }
+
+
+                        break;
+                    }
+                    case FN4:
+                    {
+                        if (encoder == ControlId::Encoder0) {
+                            sequencerTimer.setStepLength(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, event.value);
+                        }
+
+                        if (encoder == ControlId::Encoder1) {
+                            sequencerTimer.setStepInstrument(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, event.value);
+                        }
+
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                
+                return;
+            }
 
             switch (fnMask)
             {
@@ -279,3 +345,221 @@ class MainInputMode : public InputMode
         Display& display;
         InputModes pendingMode = InputModes::None;
 };
+
+
+
+
+
+Vu ta structure, ne réécris rien. Le plus simple est d'ajouter un petit état de confirmation dans MainInputMode et d'intercepter seulement les actions qui doivent confirmer.
+
+Tu as déjà une architecture avec InputMode, donc fais-le dedans.
+
+1) Ajoute un état privé dans MainInputMode
+
+En bas :
+
+private:
+    SequencerTimer& sequencerTimer;
+    Display& display;
+    InputModes pendingMode = InputModes::None;
+
+    enum class ConfirmAction {
+        None,
+        DeleteQuarterNote,
+        ClearTrack
+    };
+
+    ConfirmAction confirmAction = ConfirmAction::None;
+2) Ajoute une fonction d'affichage
+
+Dans MainInputMode :
+
+void showConfirm(const char* text)
+{
+    display.u8g2.clearBuffer();
+
+    display.u8g2.drawFrame(10, 18, 108, 28);
+    display.u8g2.setFont(u8g2_font_6x10_tf);
+
+    display.u8g2.drawStr(20, 32, text);
+    display.u8g2.drawStr(20, 45, "YES");
+    display.u8g2.drawStr(80, 45, "NO");
+
+    display.u8g2.sendBuffer();
+}
+
+(adapte juste le nom de ton objet U8g2 dans Display)
+
+3) Quand tu fais ton delete, au lieu de supprimer
+
+Tu as actuellement :
+
+case FN4 | FN7:
+    /** @todo remove last quarter note */
+    sequencerTimer.removeQuarterNote();
+    break;
+
+Tu remplaces juste par :
+
+case FN4 | FN7:
+    confirmAction = ConfirmAction::DeleteQuarterNote;
+    showConfirm("DELETE?");
+    break;
+4) Tu récupères la réponse avec un bouton
+
+Dans fnReleaseAction au début :
+
+if (confirmAction != ConfirmAction::None)
+{
+    if (fnMask == FN0)   // exemple : YES
+    {
+        if (confirmAction == ConfirmAction::DeleteQuarterNote)
+        {
+            sequencerTimer.removeQuarterNote();
+        }
+
+        confirmAction = ConfirmAction::None;
+        return;
+    }
+
+    if (fnMask == FN1)   // NO
+    {
+        confirmAction = ConfirmAction::None;
+        return;
+    }
+}
+
+Avantage : tu ne touches pas à ton système de FnMask, InputMode, StepState, etc.
+Tu ajoutes juste une couche UI au-dessus.
+
+Vu ton code, je ferais même un petit ModalState dans InputMode plus tard, mais là ça suffit sans
+
+
+
+
+Oui, un `ModalState` serait plus propre dans ton cas. Ton `InputMode` gère déjà des états d'entrée (`Fn`, `Step`, encodeurs), donc au lieu d'ajouter plein de `if (confirmAction...)`, tu ajoutes un **état UI temporaire**.
+
+L'idée :
+
+```
+NORMAL
+  |
+  | FN4+FN7
+  v
+CONFIRM_DELETE
+  |
+  +--> YES -> suppression -> NORMAL
+  |
+  +--> NO  -> NORMAL
+```
+
+### Dans `InputMode.h`
+
+Ajoute un enum :
+
+```cpp
+enum class ModalState
+{
+    None,
+    Confirm
+};
+```
+
+Puis dans `InputMode` :
+
+```cpp
+ModalState modalState = ModalState::None;
+```
+
+et éventuellement :
+
+```cpp
+virtual void modalAction(const InputEvent& event, FnMask fnMask)
+{
+}
+```
+
+---
+
+Ensuite dans `handleEvent()` tu ajoutes juste au début :
+
+```cpp
+if (modalState != ModalState::None)
+{
+    modalAction(event, fnState.pressedMask);
+    return;
+}
+```
+
+Ça veut dire : si une fenêtre est ouverte, les touches ne tombent pas dans le reste du système.
+
+---
+
+Dans `MainInputMode` :
+
+```cpp
+enum class ConfirmAction
+{
+    None,
+    DeleteQuarterNote
+};
+
+ConfirmAction confirmAction = ConfirmAction::None;
+```
+
+Quand tu demandes confirmation :
+
+```cpp
+case FN4 | FN7:
+
+    modalState = ModalState::Confirm;
+    confirmAction = ConfirmAction::DeleteQuarterNote;
+
+    showConfirm("DELETE?");
+    break;
+```
+
+---
+
+Et tu implémentes seulement :
+
+```cpp
+void modalAction(const InputEvent& event, FnMask fnMask) override
+{
+    if (event.type != InputEventType::ButtonReleased)
+        return;
+
+    if (fnMask == FN0) // YES
+    {
+        if (confirmAction == ConfirmAction::DeleteQuarterNote)
+        {
+            sequencerTimer.removeQuarterNote();
+        }
+
+        modalState = ModalState::None;
+        confirmAction = ConfirmAction::None;
+    }
+
+
+    if (fnMask == FN1) // NO
+    {
+        modalState = ModalState::None;
+        confirmAction = ConfirmAction::None;
+    }
+}
+```
+
+---
+
+L'intérêt par rapport au simple `if` :
+
+* pas besoin de polluer `fnReleaseAction()`
+* impossible de modifier un step pendant une confirmation
+* tu pourras réutiliser pour :
+
+  * `CLEAR TRACK?`
+  * `LOAD SONG?`
+  * `SAVE?`
+  * `RESET?`
+
+Ton architecture est déjà proche d'un tracker, donc les modales séparées sont une bonne évolution.
