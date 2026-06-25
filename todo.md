@@ -110,3 +110,7 @@ BTN6	33
 BTN7	32
 
 Avec INPUT_PULLUP.
+
+
+
+~/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-addr2line -pfiaC -e .pio/build/esp32dev/firmware.elf 0x400d09b8

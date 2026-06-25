@@ -20,12 +20,19 @@ class MainInputMode : public InputMode
         {
         }
 
+        void initEncoder()
+        {
+            input.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
+            input.setEncoderValue(ControlId::Encoder0, sequencerTimer.volume);
+
+            input.setEncoderBoundaries(ControlId::Encoder1, 1, 999, false);
+            input.setEncoderValue(ControlId::Encoder1, sequencerTimer.bpm);
+        }
+
         void onEnter() override
         {
             Serial.println("=== MAIN MODE ===");
-
-            input.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
-            input.setEncoderValue(ControlId::Encoder1, sequencerTimer.volume);
+            initEncoder();
         }
 
         void onExit() override
@@ -34,106 +41,238 @@ class MainInputMode : public InputMode
         }
 
     protected:
-        // void stepReleaseAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        //     // switch(fnMask)
-        //     // {
-        //     //     case 0:
-        //     //     {
-        //     //         uint8_t row = static_cast<uint8_t>(event.control) / 4;
-        //     //         uint8_t col = static_cast<uint8_t>(event.control) % 4;
-        //     //         sequencerTimer.toggleStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, row, col);
+        void fnReleasedAlways(const InputEvent& event, FnMask fnMask) override
+        {
+            // Le test avec & est donc généralement celui qu'on utilise pour savoir si une touche particulière faisait partie d'une combinaison.
+            // if (fnMask & FN4) {
+            //     initEncoder();
+            // }
 
-        //     //         break;
-        //     //     }
+            // if (fnMask & FN5) {
+            //     initEncoder();
+            // }
+            initEncoder();
+        }
 
-        //     //     case FN4:
-        //     //         // selectPattern(step);
-        //     //         break;
+        void stepReleasedAlways(const InputEvent& event, FnMask fnMask) override
+        {
+            initEncoder();
+        }
 
-        //     //     case FN5:
-        //     //         // selectTrack(step);
-        //     //         break;
+        void stepPressedAction(const InputEvent& event, FnMask fnMask) override
+        {
+            ControlId pressedStep = event.control;
 
-        //     //     case (FN4 | FN5):
-        //     //         // selectBank(step);
-        //     //         break;
+            switch (fnMask)
+            {
+                case 0:
+                    /** @todo set encoder 0 value and range to choose note */
+                    /** @todo set encoder 1 value and range to choose octave */
 
-        //     //     default:
-        //     //         break;
-        //     // }
-        // }
+                    break;
+                case FN4:
+                    /** @todo set encoder 0 value and range to choose length */
+                    /** @todo set encoder 1 value and range to choose instrument */
 
-        // void fnReleaseAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        //     //     Serial.println("Mask");
-        //     // Serial.println(fnMask);
-        //     // switch(fnMask)
-        //     // {
-        //     //     case FN3:
-        //     //     {
-        //     //         Serial.println("FN3");
-        //     //         Serial.println(static_cast<uint8_t>(event.control));
+                    break;
+            
+            default:
+                break;
+            }
+        }
 
-        //     //         return;
-        //     //     }
-        //     //     case FN2|FN3:
-        //     //     {
-        //     //         Serial.println("FN2 3");
-        //     //         Serial.println(static_cast<uint8_t>(event.control));
+        void stepReleaseAction(const InputEvent& event, FnMask fnMask) override
+        {
+            switch (fnMask)
+            {
+                case 0:
+                {
+                    /** @todo toggle step state */
+                    uint8_t row = (static_cast<uint8_t>(event.control)) / 4;
+                    uint8_t col = (static_cast<uint8_t>(event.control)) % 4;
+                    sequencerTimer.toggleStep(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col);
 
-        //     //         return;
-        //     //     }
-        //     //     default:
-        //     //         break;
-        //     // }
-        // }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
 
-        // void fnHoldAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        // }
+        void fnPressedAction(const InputEvent& event, FnMask fnMask) override
+        {
+            switch (fnMask)
+            {
+                case FN4:
+                {
+                    /** @todo set encoder 0 value and range to choose track */
+                    /** @todo set encoder 1 value and range to choose quarter note */
+                    uint8_t Tcount = max<uint8_t>(1, sequencerTimer.trackCounts);
+                    if (0 < Tcount-1) {
+                        input.setEncoderBoundaries(ControlId::Encoder0, 0, Tcount-1, true);
+                        input.setEncoderValue(ControlId::Encoder0, sequencerTimer.selectedTrack);
+                    }
 
-        // void encoderAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        //     if (stepState.pressed)
-        //     {
-        //         return;
-        //     }
-        //     // global fn pas step
-        // }
+                    uint8_t Qcount = max<uint8_t>(1, sequencerTimer.quarterNoteCounts);
+                    if (0 < Qcount-1) {
+                        input.setEncoderBoundaries(ControlId::Encoder1, 0, Qcount-1, true);
+                        input.setEncoderValue(ControlId::Encoder1, sequencerTimer.selectedQuarterNote);
+                    }
 
-        // void stepHoldAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        // }
+                    break;
+                }
+                case FN5:
+                    /** @todo  set encoder 0 value and range for track volume */
+                    /** @todo  set encoder 1 value and range for track transpose */
+                    break;
 
-        // void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        //     // Serial.println("HOLDMask");
-        //     // Serial.println(fnMask);
-        //     // switch(fnMask)
-        //     // {
-        //     //     case FN3:
-        //     //     {
-        //     //         Serial.println("HOLDFN3");
-        //     //         Serial.println(static_cast<uint8_t>(event.control));
+                case FN6:
+                    /** @todo  set encoder 0 value and range to choose instrument */
+                    break;
+            
+                default:
+                    break;
+            }
+        }
 
-        //     //         return;
-        //     //     }
-        //     //     case FN2|FN3:
-        //     //     {
-        //     //         Serial.println("HOLDFN2 3");
-        //     //         Serial.println(static_cast<uint8_t>(event.control));
+        void fnReleaseAction(const InputEvent& event, FnMask fnMask) override
+        {
+            switch (fnMask)
+            {
+                case FN0:
+                    /** @todo toggle play pause */
 
-        //     //         return;
-        //     //     }
-        //     //     default:
-        //     //         break;
-        //     // }
-        // }
+                    break;
+                case FN1:
+                    /** @todo loop through play mode */
 
-        // void stepHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
-        // {
-        // }
+                    break;
+                case FN4:
+                    /** @todo Go to steps edition screen */
+                    break;
+
+                case FN4 | FN7:
+                    /** @todo add quarter note */
+                    break;
+
+                case FN5:
+                    /** @todo Go to track edition screen */
+                    break;
+                
+                case FN6:
+                    /** @todo Go to instrument edition screen */
+                    break;
+                case FN7:
+                    /** @todo clear entire screen */
+                    break;
+                case FN5 | FN7:
+                    /** @todo clear display part selected track */
+                    break;
+                
+                default:
+                    break;
+            }
+        }
+
+        void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask) override
+        {
+            switch (fnMask)
+            {
+                case FN0:
+                    /** @todo toggle play stop */
+
+                    break;
+                
+                case FN4:
+                    /** @todo Go to quarter note edition screen */
+                    break;
+                
+                case FN5:
+                    /** @todo Mute selected track */
+                    break;
+
+                case FN4 | FN7:
+                    /** @todo remove last quarter note */
+                    break;
+
+                case FN5 | FN7:
+                    /** @todo clear display selected track */
+                    break;
+                
+                default:
+                    break;
+            }
+        }
+
+        void encoderAction(const InputEvent& event, FnMask fnMask)
+        {
+            ControlId encoder = event.control;
+
+            switch (fnMask)
+            {
+                case 0:
+                    if (encoder == ControlId::Encoder0) {
+                        /** @todo  set sequencer volume */
+                        sequencerTimer.setVolume(event.value);
+                    }
+
+                    if (encoder == ControlId::Encoder1) {
+                        /** @todo  set sequencer bpm */
+                        sequencerTimer.setBpm(event.value);
+                    }
+
+                    break;
+
+                case FN4:
+                    if (encoder == ControlId::Encoder0) {
+                        /** @todo  choose track */
+
+                        sequencerTimer.setSelectedTrack(event.value);
+
+                        Serial.println("SELECT");
+                        Serial.println(sequencerTimer.selectedTrack);
+                        if (
+                            event.value >= (display.displayedTrack+2)
+                        ) {
+                            display.displayedTrack = event.value-1;
+                        }
+
+                        if (event.value <= display.displayedTrack) {
+                            display.displayedTrack = event.value;
+                        }
+
+                    }
+
+                    if (encoder == ControlId::Encoder1) {
+                        /** @todo  choose quarter note */
+                        sequencerTimer.setSelectedQuarterNote(event.value);
+                    }
+                    break;
+
+                case FN5:
+                    if (encoder == ControlId::Encoder0) {
+                        /** @todo  set track volume */
+                        sequencerTimer.setTrackVolume(sequencerTimer.selectedTrack, event.value);
+                    }
+
+                    if (encoder == ControlId::Encoder1) {
+                        /** @todo  set track transpose */
+                        sequencerTimer.setTrackTranspose(sequencerTimer.selectedTrack, event.value);
+                    }
+                    break;
+
+                case FN6:
+                    if (encoder == ControlId::Encoder0) {
+                        /** @todo  choose instrument */
+                    }
+
+                    break;
+            
+            default:
+                break;
+            }
+        }
+        
 
     private:
         SequencerTimer& sequencerTimer;

@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "Constants.h"
 #include "SequencerTimer.h"
-#include <Bounce2.h>
+// #include <Bounce2.h>
 #include <Keypad.h>
 #include "InputEvent.h"
 #include "Display/Display.h"
@@ -134,9 +134,13 @@ class Input
                 rotaryEncoders[i] = AiEsp32RotaryEncoder(Constants::ROTARY_ENCODERS_PIN[i][0], Constants::ROTARY_ENCODERS_PIN[i][1], Constants::ROTARY_ENCODERS_PIN[i][2], -1, 4);
 
                 rotaryEncoders[i].begin();
-                rotaryEncoders[i].setup(readEncoderISR);
-                rotaryEncoders[i].setAcceleration(200);
+                // rotaryEncoders[i].setup(readEncoderISR);
+                rotaryEncoders[i].setAcceleration(0);
             }
+
+            rotaryEncoders[0].setup(readEncoder0ISR);
+             rotaryEncoders[1].setup(readEncoder1ISR);
+
 
             setMode(InputModes::Main);
 
@@ -162,12 +166,21 @@ class Input
             );
         }
 
-        static void IRAM_ATTR readEncoderISR()
+        static void IRAM_ATTR readEncoder0ISR()
         {
             if (instance != nullptr) {
-                for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
-                    instance->rotaryEncoders[i].readEncoder_ISR();
-                }
+            //     for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+                    instance->rotaryEncoders[0].readEncoder_ISR();
+            //     }
+            }
+        }
+
+        static void IRAM_ATTR readEncoder1ISR()
+        {
+            if (instance != nullptr) {
+            //     for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+                    instance->rotaryEncoders[1].readEncoder_ISR();
+            //     }
             }
         }
 
@@ -230,6 +243,24 @@ class Input
                 case 5: return ControlId::Fn5;
                 case 6: return ControlId::Fn6;
                 case 7: return ControlId::Fn7;
+
+                case 8: return ControlId::Step0;
+                case 9: return ControlId::Step1;
+                case 10: return ControlId::Step2;
+                case 11: return ControlId::Step3;
+                case 12: return ControlId::Step4;
+                case 13: return ControlId::Step5;
+                case 14: return ControlId::Step6;
+                case 15: return ControlId::Step7;
+                case 16: return ControlId::Step8;
+                case 17: return ControlId::Step9;
+                case 18: return ControlId::Step10;
+                case 19: return ControlId::Step11;
+                case 20: return ControlId::Step12;
+                case 21: return ControlId::Step13;
+                case 22: return ControlId::Step14;
+                case 23: return ControlId::Step15;
+
                 default: return ControlId::None;
             }
         }
@@ -259,7 +290,7 @@ class Input
             Input* input = static_cast<Input*>(pvParameters);
             for (;;) {
                 for (uint8_t i = 0;i<Constants::NUMBER_OF_ROTARY_ENCODERS;i++) {
-                    input->rotaryEncoderButtons[i].update();
+                    // input->rotaryEncoderButtons[i].update();
                     if (input->rotaryEncoders[i].encoderChanged()) {
                         InputEvent e;
                         e.id = i;
@@ -322,7 +353,7 @@ class Input
         // Display& display;
         static Input* instance;
         AiEsp32RotaryEncoder rotaryEncoders[Constants::NUMBER_OF_ROTARY_ENCODERS];
-        Bounce2::Button rotaryEncoderButtons[Constants::NUMBER_OF_ROTARY_ENCODERS];
+        // Bounce2::Button rotaryEncoderButtons[Constants::NUMBER_OF_ROTARY_ENCODERS];
 
         InputMode* currentMode = nullptr;
 

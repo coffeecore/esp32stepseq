@@ -6,8 +6,14 @@
 
 typedef struct {
     bool state = false;
-    uint8_t note = 127;
+
+    uint8_t note = 60;
+    char noteStr[6] = "C-4";
+    uint32_t noteFreq = 26163;
+
     uint8_t length = 6;
+
+    int8_t instrument = -1;
 } Step;
 
 typedef struct {
@@ -17,14 +23,14 @@ typedef struct {
     uint8_t nextStepTick = 0;
 
     Step steps[4];
-    uint8_t stepsCount = 0;
+    uint8_t stepsCount = 4;
 
 } QuarterNote;
 
-typedef struct {
-    QuarterNote quarterNotes[4];
-    uint8_t quarterNotesCount = 4;
-} Pattern;
+// typedef struct {
+//     QuarterNote quarterNotes[4];
+//     uint8_t quarterNotesCount = 4;
+// } Pattern;
 
 typedef struct {
     int8_t remainingTicks = 0;
@@ -33,9 +39,12 @@ typedef struct {
 } TrackNoteState;
 
 typedef struct {
-    Pattern patterns[16];
+    // Pattern patterns[16];
+    QuarterNote quarterNotes[64];
     int8_t transpose = 0;
     uint8_t volume = 255;
+
+    uint8_t instrument = 0;
 } Track;
 
 class SequencerTimer
@@ -44,9 +53,15 @@ class SequencerTimer
         uint8_t volume = 127;
         uint16_t bpm = Constants::DEFAULT_BPM;
         uint8_t selectedTrack = 0;
-        uint8_t selectedPattern = 0;
         uint8_t selectedQuarterNote = 0;
         uint8_t selectedStep = 0;
+        uint8_t selectedInstrument = 0;
+        uint8_t trackCounts = 0;
+        uint8_t quarterNoteCounts = 0;
+
+        Track tracks[Constants::MAX_TRACKS];
+        uint8_t ppqn = Constants::DEFAULT_PPQN;
+
 
         SequencerTimer(HTimer& _timer): timer(_timer)
         {
@@ -98,26 +113,64 @@ class SequencerTimer
             return 60 * 1000 * 1000 / (ppqn * bpm);
         }
 
+        void midiToName(uint8_t midi, char* buffer, size_t bufferSize)
+        {
+            static const char* names[] =
+            {
+                "C", "C#", "D", "D#", "E", "F",
+                "F#", "G", "G#", "A", "A#", "B"
+            };
+
+            const char* note = names[midi % 12];
+            uint8_t octave = (midi / 12) - 1;
+
+            if (note[1] == '\0') {
+                snprintf(buffer, bufferSize, "%s-%d", note, octave);
+            } else {
+                snprintf(buffer, bufferSize, "%s%d", note, octave);
+            }
+        }
+
+        uint32_t midiToFreq(uint8_t note) {
+            return (uint32_t)(44000.0 * pow(2.0, (note - 69) / 12.0));
+        }
+
         /**
          * -- Getter/Setter selected ---
          */
-        void setSelectedTrack(uint8_t trackIndex)
+        void setStepNote(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
         {
-            selectedTrack = trackIndex;
+            Step& step = tracks[trackIndex]
+                    .quarterNotes[quarterNoteIndex]
+                    .steps[stepIndex];
+           step.note = value;
+            midiToName(value, step.noteStr, sizeof(step.noteStr));
+            step.noteFreq = midiToFreq(value);
+
         }
 
-        void setSelectedPattern(uint8_t patternIndex)
+        void setSelectedTrack(uint8_t trackIndex)
         {
-            if (patternIndex >= patternCounts) {
+            if (trackIndex >= trackCounts) {
                 return;
             }
 
-            selectedPattern = patternIndex;
+            selectedTrack = trackIndex;
         }
+
+        // void setSelectedPattern(uint8_t patternIndex)
+        // {
+        //     if (patternIndex >= patternCounts) {
+        //         return;
+        //     }
+
+        //     selectedPattern = patternIndex;
+        // }
 
         void setSelectedQuarterNote(uint8_t quarterNoteIndex)
         {
-            if (quarterNoteIndex >= 4) {
+            // if (quarterNoteIndex >= 4) {
+            if (quarterNoteIndex >= quarterNoteCounts) {
                 return;
             }
 
@@ -126,7 +179,8 @@ class SequencerTimer
 
         void setSelectedStep(uint8_t stepIndex)
         {
-            if (stepIndex >= getQuarterNote(selectedTrack, selectedPattern, selectedQuarterNote).stepsCount) {
+            if (stepIndex >= tracks[selectedTrack].quarterNotes[selectedQuarterNote].stepsCount) {
+            // if (stepIndex >= getQuarterNote(selectedTrack, selectedPattern, selectedQuarterNote).stepsCount) {
                 return;
             }
 
@@ -159,19 +213,19 @@ class SequencerTimer
             timer.setTickDurationInMicroSeconds(computeTickDurationInMicroSeconds());
         }
 
-        void setCurrentPattern(uint8_t _currentPattern)
-        {
-            if (_currentPattern >= patternCounts) {
-                return;
-            }
+        // void setCurrentPattern(uint8_t _currentPattern)
+        // {
+        //     if (_currentPattern >= patternCounts) {
+        //         return;
+        //     }
 
-            currentPattern = _currentPattern;
-        }
+        //     currentPattern = _currentPattern;
+        // }
 
-        Pattern& getPattern(uint8_t trackIndex, uint8_t patternIndex)
-        {
-            return tracks[trackIndex].patterns[patternIndex];
-        }
+        // Pattern& getPattern(uint8_t trackIndex, uint8_t patternIndex)
+        // {
+        //     return tracks[trackIndex].patterns[patternIndex];
+        // }
 
         void setCurrentQuarterNote(uint8_t _currentQuarterNote)
         {
@@ -182,20 +236,31 @@ class SequencerTimer
             currentQuarterNote = _currentQuarterNote;
         }
 
-        QuarterNote& getQuarterNote(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex)
-        {
-            return tracks[trackIndex].patterns[patternIndex].quarterNotes[quarterNoteIndex];
-        }
+        // QuarterNote& getQuarterNote(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex)
+        // {
+        //     return tracks[trackIndex].patterns[patternIndex].quarterNotes[quarterNoteIndex];
+        // }
 
-        Step& getStep(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
-        {
-            return tracks[trackIndex].patterns[patternIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
-        }
+        // Step& getStep(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
+        // {
+        //     return tracks[trackIndex].patterns[patternIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
+        // }
 
         void setVolume(uint8_t _volume)
         {
             volume = _volume;
         }
+
+        // void setPan(int8_t _pan)
+        // {
+        //     if (_pan < -10) {
+        //         _pan = -10;
+        //     }
+        //     if (_pan > 10) {
+        //         _pan = 10;
+        //     }
+        //     pan = _pan;
+        // }
 
         Track& getTrack(uint8_t trackIndex)
         {
@@ -214,26 +279,47 @@ class SequencerTimer
             trackCounts++;
         }
 
-        void addPattern()
+        // void addPattern()
+        // {
+        //     if (patternCounts >= 16) {
+        //         return;
+        //     }
+
+        //     patternCounts++;
+        // }
+
+        void addQuarterNote()
         {
-            if (patternCounts >= 16) {
+            if (quarterNoteCounts >= 64) {
                 return;
             }
 
-            patternCounts++;
+            quarterNoteCounts++;
         }
 
-        void addStep(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex)
+        void addStep(uint8_t trackIndex, uint8_t quarterNoteIndex)
         {
-            if (quarterNoteIndex >= getPattern(trackIndex, patternIndex).quarterNotesCount) {
+            // if (quarterNoteIndex >= getPattern(trackIndex, patternIndex).quarterNotesCount) {
+            if (quarterNoteIndex >= quarterNoteCounts) {
                 return;
             }
 
-            if (getPattern(trackIndex, patternIndex).quarterNotes[quarterNoteIndex].stepsCount >= 4) {
+            // if (getPattern(trackIndex, patternIndex).quarterNotes[quarterNoteIndex].stepsCount >= 4) {
+            if (tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount >= 4) {
                 return;
             }
+            // Serial.println("addstep");
+            // Serial.println(tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount);
+            // getPattern(trackIndex, patternIndex).quarterNotes[quarterNoteIndex].stepsCount++;
+            tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount++;
 
-            getPattern(trackIndex, patternIndex).quarterNotes[quarterNoteIndex].stepsCount++;
+            tracks[trackIndex].quarterNotes[quarterNoteIndex].ticksByStep = ppqn / tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount;
+
+            for (uint8_t i=0;i<tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount;i++) {
+                // if (tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[i].length > tracks[trackIndex].quarterNotes[quarterNoteIndex].ticksByStep) {
+                    tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[i].length = tracks[trackIndex].quarterNotes[quarterNoteIndex].ticksByStep;
+                // }
+            }
         }
 
         /**
@@ -261,17 +347,48 @@ class SequencerTimer
             track.transpose = _transpose;
         }
 
-        void toggleStep(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
+        // void toggleStep(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
+        // {
+        //     // if (quarterNoteIndex >= getPattern(trackIndex, patternIndex).quarterNotesCount) {
+        //     if (quarterNoteIndex >= quarterNoteCounts) {
+        //         Serial.println("quarterNoteIndex >= quarterNoteCounts");
+        //         return;
+        //     }
+
+        //     // if (getQuarterNote(trackIndex, patternIndex, quarterNoteIndex).stepsCount <= stepIndex) {
+        //     if (tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount <= stepIndex) {
+        //         Serial.println(tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount);
+        //         Serial.println(trackIndex);
+        //         Serial.println(quarterNoteIndex);
+        //         Serial.println(stepIndex);
+        //                         Serial.println("tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount <= stepIndex");
+        //         return;
+        //     }
+
+        //     // getStep(trackIndex, patternIndex, quarterNoteIndex, stepIndex).state = !getStep(trackIndex, patternIndex, quarterNoteIndex, stepIndex).state;
+        //     tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex].state = !tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex].state;
+        // }
+
+        void toggleStep(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
         {
-            if (quarterNoteIndex >= getPattern(trackIndex, patternIndex).quarterNotesCount) {
+            // if (quarterNoteIndex >= getPattern(trackIndex, patternIndex).quarterNotesCount) {
+            if (quarterNoteIndex >= quarterNoteCounts) {
+                // Serial.println("quarterNoteIndex >= quarterNoteCounts");
                 return;
             }
 
-            if (getQuarterNote(trackIndex, patternIndex, quarterNoteIndex).stepsCount <= stepIndex) {
+            // if (getQuarterNote(trackIndex, patternIndex, quarterNoteIndex).stepsCount <= stepIndex) {
+            if (tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount <= stepIndex) {
+                // Serial.println(tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount);
+                // Serial.println(trackIndex);
+                // Serial.println(quarterNoteIndex);
+                // Serial.println(stepIndex);
+                //                 Serial.println("tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount <= stepIndex");
                 return;
             }
 
-            getStep(trackIndex, patternIndex, quarterNoteIndex, stepIndex).state = !getStep(trackIndex, patternIndex, quarterNoteIndex, stepIndex).state;
+            // getStep(trackIndex, patternIndex, quarterNoteIndex, stepIndex).state = !getStep(trackIndex, patternIndex, quarterNoteIndex, stepIndex).state;
+            tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex].state = !tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex].state;
         }
 
         static void sequencerTask(void* pvParameters)
@@ -288,20 +405,22 @@ class SequencerTimer
                         seq->currentQuarterNote++;
                         quarterChanged = true;
 
-                        if (seq->currentQuarterNote >= 4) {
+                        // if (seq->currentQuarterNote >= 4) {
+                        if (seq->currentQuarterNote >= seq->quarterNoteCounts) {
                             seq->currentQuarterNote = 0;
 
-                            seq->currentPattern++;
+                            // seq->currentPattern++;
 
-                            if (seq->currentPattern >= seq->patternCounts) {
-                                seq->currentPattern = 0;
-                            }
+                            // if (seq->currentPattern >= seq->patternCounts) {
+                            //     seq->currentPattern = 0;
+                            // }
                         }
                     }
 
                     if (quarterChanged) {
                         for (uint8_t i = 0; i < seq->trackCounts; i++) {
-                            QuarterNote& quarterNote = seq->tracks[i].patterns[seq->currentPattern].quarterNotes[seq->currentQuarterNote];
+                            // QuarterNote& quarterNote = seq->tracks[i].patterns[seq->currentPattern].quarterNotes[seq->currentQuarterNote];
+                            QuarterNote& quarterNote = seq->tracks[i].quarterNotes[seq->currentQuarterNote];
 
                             quarterNote.stepIndex = 0;
                             quarterNote.nextStepTick = 0;
@@ -328,7 +447,8 @@ class SequencerTimer
 
         bool processPattern(uint8_t tick, uint8_t trackIndex, Track& track)
         {
-            QuarterNote& quarterNote = track.patterns[currentPattern].quarterNotes[currentQuarterNote];
+            // QuarterNote& quarterNote = track.patterns[currentPattern].quarterNotes[currentQuarterNote];
+            QuarterNote& quarterNote = track.quarterNotes[currentQuarterNote];
 
             int8_t diff = (tick - quarterNote.nextStepTick);
 
@@ -393,16 +513,16 @@ class SequencerTimer
         void triggerStepOff(Step& step)
         {
             // MIDI note off / stop voice
-            Serial.print("NOTE OFF : ");
-            Serial.println(millis());
+            // Serial.print("NOTE OFF : ");
+            // Serial.println(millis());
         }
 
 
         void triggerStepOn(Step& step)
         {
             // MIDI / GPIO / synth trigger
-            Serial.print("NOTE ON : ");
-            Serial.println(millis());
+            // Serial.print("NOTE ON : ");
+            // Serial.println(millis());
         }
     
     private:
@@ -410,16 +530,13 @@ class SequencerTimer
         uint8_t currentTick = 0;
         TaskHandle_t xHandle = nullptr;
         static SequencerTimer* instance;
-        uint8_t ppqn = Constants::DEFAULT_PPQN;
 
         uint8_t currentPattern = 0;
         uint8_t currentQuarterNote = 0;
 
-        Track tracks[Constants::MAX_TRACKS];
-        uint8_t trackCounts = 0;
-        uint8_t patternCounts = 0;
+        // uint8_t patternCounts = 0;
 
-        uint8_t pendingPatternChange = 0;
+        // uint8_t pendingPatternChange = 0;
         int8_t nextPattern = 0;
 
 

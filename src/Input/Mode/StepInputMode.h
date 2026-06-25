@@ -23,8 +23,8 @@ public:
     {
         Serial.println("=== STEP MODE ===");
 
-        // input.setEncoderBoundaries(Constants::ROTARY_ENCODER_A, 0, 255, false);
-        // input.setEncoderValue(Constants::ROTARY_ENCODER_A, sequencerTimer.getVolume());
+        input.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
+        input.setEncoderValue(ControlId::Encoder1, sequencerTimer.volume);
     }
 
     void onExit() override

@@ -10,11 +10,13 @@
 #include "Input/Input.h"
 #include "Input/Mode/MainInputMode.h"
 #include "Input/Mode/StepInputMode.h"
+#include "Input/Mode/QuarterNoteInputMode.h"
 
 
 #include "Display/Display.h"
 #include "Display/Mode/MainDisplayMode.h"
 #include "Display/Mode/StepDisplayMode.h"
+#include "Display/Mode/QuarterNoteDisplayMode.h"
 
 constexpr uint8_t SCREEN_WIDTH = 128;
 constexpr uint8_t  SCREEN_HEIGHT = 64;
@@ -32,9 +34,11 @@ Input input(sequencerTimer);
 
 MainInputMode mainInputMode(input, sequencerTimer, display);
 StepInputMode stepInputMode(input, sequencerTimer, display);
+QuarterNoteInputMode quarterNoteInputMode(input, sequencerTimer, display);
 
 MainDisplayMode mainDisplayMode(display, sequencerTimer);
 StepDisplayMode stepDisplayMode(display, sequencerTimer);
+QuarterNoteDisplayMode quarterNoteDisplayMode(display, sequencerTimer);
 
 void setup() {
 
@@ -50,8 +54,66 @@ void setup() {
 
 
     sequencerTimer.begin();
+
+    Serial.println("Add track and pattern");
+
+    sequencerTimer.addTrack();
+    sequencerTimer.addTrack();
+    sequencerTimer.addTrack();
+    sequencerTimer.addTrack();
+    sequencerTimer.addTrack();
+    // sequencerTimer.addPattern();
+    sequencerTimer.addQuarterNote();
+    sequencerTimer.addQuarterNote();
+    // sequencerTimer.addQuarterNote();
+    // sequencerTimer.addQuarterNote();
+    // sequencerTimer.addQuarterNote();
+    // for (uint8_t i = 0;i<Constants::MAX_TRACKS;i++) {
+    //     for (uint8_t j = 0;j<4;j++) {
+    //         // sequencerTimer.addStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, i);
+    //         sequencerTimer.addStep(i, sequencerTimer.selectedPattern, 0);
+    //     }
+    // }
+    sequencerTimer.addStep(0, 0);
+    sequencerTimer.addStep(0, 0);
+    sequencerTimer.addStep(0, 0);
+    sequencerTimer.addStep(0, 0);
+
+    sequencerTimer.addStep(1, 0);
+    sequencerTimer.addStep(1, 0);
+    sequencerTimer.addStep(1, 0);
+    sequencerTimer.tracks[1].quarterNotes->stepsCount = 3;
+
+    sequencerTimer.addStep(2, 0);
+    sequencerTimer.addStep(2, 0);
+
+    sequencerTimer.addStep(3, 0);
+
+    sequencerTimer.addStep(4, 0);
+    sequencerTimer.addStep(4, 0);
+    sequencerTimer.addStep(4, 0);
+    sequencerTimer.addStep(4, 0);
+
+
+
+    sequencerTimer.toggleStep(0, 0, 0);
+    sequencerTimer.toggleStep(0, 0, 2);
+    sequencerTimer.toggleStep(0, 0, 3);
+
+    sequencerTimer.toggleStep(1, 0, 0);
+    sequencerTimer.toggleStep(1, 0, 2);
+
+    sequencerTimer.toggleStep(2, 0, 0);
+
+    sequencerTimer.toggleStep(3, 0, 0);
+
+    sequencerTimer.toggleStep(4, 0, 1);
+    sequencerTimer.toggleStep(4, 0, 2);
+    sequencerTimer.toggleStep(4, 0, 4);
+
     display.registerMode(DisplayModes::Main, &mainDisplayMode);
     display.registerMode(DisplayModes::Step, &stepDisplayMode);
+    display.registerMode(DisplayModes::QuarterNote, &quarterNoteDisplayMode);
 
     display.begin();
 
@@ -61,21 +123,36 @@ void setup() {
 
     input.registerMode(InputModes::Main, &mainInputMode);
     input.registerMode(InputModes::Step, &stepInputMode);
+    input.registerMode(InputModes::QuarterNote, &quarterNoteInputMode);
 
     input.begin();
     // input.setMode(InputModes::Main);
 
     // input.setMode(&mainInputMode);
 
-    Serial.println("Add track and pattern");
+    // Serial.println("Add track and pattern");
 
-    sequencerTimer.addTrack();
-    sequencerTimer.addPattern();
-    for (uint8_t i = 0;i<4;i++) {
-        for (uint8_t j = 0;j<4;j++) {
-            sequencerTimer.addStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, i);
-        }
-    }
+    // sequencerTimer.addTrack();
+    // sequencerTimer.addTrack();
+    // sequencerTimer.addTrack();
+    // sequencerTimer.addTrack();
+    // // sequencerTimer.addPattern();
+    // sequencerTimer.addQuarterNote();
+    // // sequencerTimer.addQuarterNote();
+    // // sequencerTimer.addQuarterNote();
+    // // sequencerTimer.addQuarterNote();
+    // for (uint8_t i = 0;i<Constants::MAX_TRACKS;i++) {
+    //     for (uint8_t j = 0;j<4;j++) {
+    //         // sequencerTimer.addStep(sequencerTimer.selectedTrack, sequencerTimer.selectedPattern, i);
+    //         sequencerTimer.addStep(i, sequencerTimer.selectedPattern, 0);
+    //     }
+    // }
+
+    // sequencerTimer.toggleStep(0, sequencerTimer.selectedPattern, 0, 2);
+    // sequencerTimer.toggleStep(2, sequencerTimer.selectedPattern, 0, 2);
+    // sequencerTimer.toggleStep(2, sequencerTimer.selectedPattern, 0, 3);
+    // sequencerTimer.toggleStep(3, sequencerTimer.selectedPattern, 0, 0);
+
 
 }
 

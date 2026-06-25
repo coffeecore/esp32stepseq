@@ -8,19 +8,20 @@ enum class InputModes
 {
     None,
     Main,
-    Step
+    Step,
+    QuarterNote
 };
 
 using FnMask = uint8_t;
 
 typedef struct 
 {
-    FnMask pressedMask = 0;
+    FnMask pressedMask = 0; // Fn encore enfoncés maintenant
 
     bool holdTriggered = false;
     bool modifierUsed = false;
 
-    FnMask pressCombo = 0;
+    FnMask pressCombo = 0; // tous les Fn ayant participé à la séquence jusqu'au relâchement complet
     FnMask holdCombo = 0;
 } FnState;
 
@@ -44,7 +45,7 @@ constexpr bool isFn(ControlId c)
 constexpr bool isStep(ControlId c)
 {
     return c >= ControlId::Step0 &&
-           c <= ControlId::Step3;
+           c <= ControlId::Step15;
 }
 
 constexpr bool isEncoder(ControlId c)
@@ -81,6 +82,17 @@ class InputMode
         {
         }
 
+        void logAction(const InputEvent& event, FnMask fnMask, char* action)
+        {
+            // Serial.printf("[Input][%s]")
+            // Serial.println("[INPUT][Release][step]");
+            // Serial.println(static_cast<uint8_t>(event.control));
+            // Serial.println("Mask");
+            // Serial.println(fnMask);
+            // Serial.println("Step pressed");
+            // Serial.println(static_cast<uint8_t>(stepState.stepId));
+        }
+
         virtual void onEnter() {}
 
         virtual void onExit() {}
@@ -95,12 +107,17 @@ class InputMode
                     if (isFn(event.control)) {
                         fnState.pressedMask |= fnBit(event.control);
                         fnState.pressCombo |= fnBit(event.control);
+
+                        fnPressedAction(event, fnState.pressedMask);
+
                     } else if (isStep(event.control)) {
                         stepState.pressed = true;
                         stepState.stepId = event.control;
 
                         // Snapshot de la combinaison
                         stepState.fnCombo = fnState.pressedMask;
+
+                        stepPressedAction(event, stepState.fnCombo);
 
                         if (stepState.fnCombo != 0) {
                             fnState.modifierUsed = true;
@@ -134,11 +151,6 @@ class InputMode
 
                 case InputEventType::ButtonReleased:
                 {
-                    // Serial.println("RELEASE");
-                    // Serial.println(isFn(event.control));
-                    // Serial.println(static_cast<uint8_t>(event.control));
-                    // If a step released and was the pressed step
-                    // We have fnCombo so we can do something different 
                     if (isStep(event.control) &&
                         stepState.pressed &&
                         event.control == stepState.stepId
@@ -151,7 +163,7 @@ class InputMode
                                 stepReleaseAction(event, stepState.fnCombo);
                             }
                         }
-
+                        stepReleasedAlways(event, stepState.fnCombo);
                         stepState.pressed = false;
                         stepState.holdTriggered = false;
                         stepState.fnCombo = 0;
@@ -159,25 +171,14 @@ class InputMode
                     } else if (isFn(event.control)) {
                         fnState.pressedMask &= ~fnBit(event.control);
 
-                        // Dernier Fn relâché
-                        // If no bit mask, fn key hold and we didnt press step key we execute hold action of fn key
                         if (fnState.pressedMask == 0) {
-                            // Serial.println("holdtrigger");
-                            // Serial.println(fnState.holdTriggered);
-                            // Serial.println("modifierUsed");
-                            // Serial.println(fnState.modifierUsed);
-
                             if (fnState.holdTriggered && !fnState.modifierUsed) {
-                                fnHoldReleaseAction(
-                                    event,
-                                    fnState.holdCombo);
+                                fnHoldReleaseAction(event, fnState.holdCombo);
                             } else if (!fnState.modifierUsed) {
-                                // Serial.println("RELAFN");
-                                // Serial.println(static_cast<uint8_t>(fnState.pressCombo));
-                                fnReleaseAction(
-                                    event,
-                                    fnState.pressCombo);
+                                fnReleaseAction(event, fnState.pressCombo);
                             }
+
+                            fnReleasedAlways(event, fnState.pressCombo);
 
                             fnState.holdTriggered = false;
                             fnState.modifierUsed = false;
@@ -230,69 +231,177 @@ class InputMode
         }
     
     protected:
-        virtual void stepReleaseAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Release][step]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
+        virtual void stepReleasedAlways(const InputEvent& event, FnMask fnMask)
+        {
+        }
+        virtual void fnReleasedAlways(const InputEvent& event, FnMask fnMask)
+        {
+            // auto releasedFn = event.control;
+
+            // if (releasedFn == ControlId::Fn0) {
+            //     // Le dernier Fn relâché est Fn0
+            // }
+
+            // if (fnMask == FN0) {
+            //     // La combinaison utilisée était uniquement Fn0
+            // }
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // La combinaison utilisée était Fn0 + Fn2
+            // }
         }
 
-        virtual void fnReleaseAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Realse][fn]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
+        virtual void stepReleaseAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto releasedStep = event.control;
+
+            // if (releasedStep == ControlId::Step3) {
+            //     // Relâchement du Step 3
+            // }
+
+            // if (fnMask == 0) {
+            //     // Aucun Fn utilisé
+            // }
+
+            // if (fnMask == FN1) {
+            //     // Step utilisé avec Fn1
+            // }
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // Step utilisé avec Fn0 + Fn2
+            // }
         }
 
-        virtual void fnHoldAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Hold][fn]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
+        virtual void fnReleaseAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto releasedFn = event.control;
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // La combinaison utilisée était Fn0 + Fn2
+            // }
+
+            // if (releasedFn == ControlId::Fn2) {
+            //     // Le dernier Fn relâché est Fn2
+            // }
         }
 
-        virtual void encoderAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Encoder]]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
-            Serial.println("Value");
-            Serial.println(event.value);
+        virtual void fnHoldAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto heldFn = event.control;
+
+            // if (fnMask == FN1) {
+            //     // Hold sur Fn1
+            // }
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // Hold alors que Fn0 + Fn2 sont maintenus
+            // }
         }
 
-        virtual void stepHoldAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Hold][step]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
+        virtual void encoderAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto encoder = event.control;
+
+            // if (encoder == ControlId::Encoder0) {
+            //     // Encoder 0 tourné
+            // }
+
+            // if (encoder == ControlId::Encoder1) {
+            //     // Encoder 1 tourné
+            // }
+
+            // if (fnMask == 0) {
+            //     // Encoder seul
+            // }
+
+            // if (fnMask == FN1) {
+            //     // Encoder avec Fn1 maintenu
+            // }
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // Encoder avec Fn0 + Fn2 maintenus
+            // }
+
+            // if (stepState.pressed) {
+            //     // un step est maintenu
+            // }
+
+            // if (stepState.stepId == ControlId::Step3) {
+            //     // c'est Step3
+            // }
         }
 
-        virtual void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Release][hold][fn]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
+        virtual void stepHoldAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto heldStep = event.control;
+
+            // if (heldStep == ControlId::Step8) {
+            //     // Hold sur Step8
+            // }
+
+            // if (fnMask == FN3) {
+            //     // Hold sur Step8 avec Fn3
+            // }
         }
 
-        virtual void stepHoldReleaseAction(const InputEvent& event, FnMask fnMask) {
-            Serial.println("[INPUT][Release][hold][step]");
-            Serial.println(static_cast<uint8_t>(event.control));
-            Serial.println("Mask");
-            Serial.println(fnMask);
-            Serial.println("Step pressed");
-            Serial.println(static_cast<uint8_t>(stepState.stepId));
+        virtual void fnHoldReleaseAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto releasedFn = event.control;
+
+            // if (fnMask == FN1) {
+            //     // Fin du hold de Fn1
+            // }
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // Fin du hold de la combinaison Fn0 + Fn2
+            // }
+        }
+
+        virtual void stepHoldReleaseAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto releasedStep = event.control;
+
+            // if (releasedStep == ControlId::Step8) {
+            //     // Fin du hold sur Step8
+            // }
+
+            // if (fnMask == FN3) {
+            //     // Fin du hold Step8 + Fn3
+            // }
+        }
+
+        virtual void fnPressedAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto pressedFn = event.control;
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // Fn0 + Fn2 actuellement maintenus
+            // }
+
+            // if (pressedFn == ControlId::Fn2) {
+            //     // c'est Fn2 qui vient d'être appuyé
+            // }
+        }
+
+        virtual void stepPressedAction(const InputEvent& event, FnMask fnMask)
+        {
+            // auto pressedStep = event.control;
+
+            // if (pressedStep == ControlId::Step3) {
+            //     // C'est Step3 qui vient d'être pressé
+            // }
+
+            // if (fnMask == 0) {
+            //     // Step pressé sans Fn
+            // }
+
+            // if (fnMask == FN1) {
+            //     // Step pressé avec Fn1
+            // }
+
+            // if (fnMask == (FN0 | FN2)) {
+            //     // Step pressé avec Fn0 + Fn2
+            // }
         }
 
     protected:

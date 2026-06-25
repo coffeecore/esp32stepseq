@@ -6,7 +6,7 @@ namespace Constants
 {
   constexpr uint8_t DEFAULT_PPQN = 24;
   constexpr uint8_t NUMBER_OF_BUTTONS = 8;
-  constexpr uint8_t MAX_TRACKS = 4;
+  constexpr uint8_t MAX_TRACKS = 10;
   constexpr uint8_t MAX_PATTERNS = NUMBER_OF_BUTTONS;
   constexpr uint8_t MAX_QUARTER_NOTE_BY_PATTERN = (NUMBER_OF_BUTTONS / 4);
   constexpr uint8_t MAX_STEPS_BY_QUARTER_NOTE = 4;

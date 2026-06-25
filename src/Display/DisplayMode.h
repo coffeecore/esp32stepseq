@@ -7,7 +7,8 @@ enum class DisplayModes
 {
     None,
     Main,
-    Step
+    Step,
+    QuarterNote
 };
 
 class DisplayMode
