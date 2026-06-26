@@ -18,13 +18,6 @@ public:
 
     void handleEvent() override
     {
-        Serial.println("[Display][STEP MODE] Handle");
-
-        display.clear();
-
-        display.drawSequencer();
-
-        display.draw();
     }
 
     private:

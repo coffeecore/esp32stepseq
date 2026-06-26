@@ -5,10 +5,18 @@
 #include "Input/InputMode.h"
 #include "Display/Display.h"
 
+enum class ConfirmAction
+{
+    None,
+    DeleteQuarterNote,
+    ClearScreen
+};
 
 class MainInputMode : public InputMode
 {
     public:
+        ConfirmAction confirmAction = ConfirmAction::None;
+
         MainInputMode(
             Input& _input,
             SequencerTimer& _sequencerTimer,
@@ -187,8 +195,14 @@ class MainInputMode : public InputMode
                     /** @todo Go to instrument edition screen */
                     break;
                 case FN7:
+                {
                     /** @todo clear entire screen */
+                    confirmAction = ConfirmAction::DeleteQuarterNote;
+                    modalState = ModalState::Confirm;
+
+                    display.showConfirm("Clear screen ?");
                     break;
+                }
                 case FN5 | FN7:
                     /** @todo clear display part selected track */
                     break;
@@ -217,9 +231,14 @@ class MainInputMode : public InputMode
                     break;
 
                 case FN4 | FN7:
+                {
                     /** @todo remove last quarter note */
-                    sequencerTimer.removeQuarterNote();
+                    confirmAction = ConfirmAction::DeleteQuarterNote;
+                    modalState = ModalState::Confirm;
+
+                    display.showConfirm("Delete quarter note ?");
                     break;
+                }
 
                 case FN5 | FN7:
                     /** @todo clear display selected track */
@@ -338,6 +357,46 @@ class MainInputMode : public InputMode
                 break;
             }
         }
+
+        void modalAction(const InputEvent& event) override
+        {
+            if (event.type != InputEventType::ButtonReleased)
+                return;
+
+            if (event.control == ControlId::Fn0) // YES
+            {
+                switch (confirmAction)
+                {
+                    case ConfirmAction::DeleteQuarterNote:
+                        sequencerTimer.removeQuarterNote();
+                        break;
+                    
+                    case ConfirmAction::ClearScreen:
+                        sequencerTimer.cleanScreen(display.displayedTrack);
+                        break;
+                    
+                    default:
+                        break;
+                }
+
+                modalState = ModalState::None;
+                confirmAction = ConfirmAction::None;
+
+                display.hideConfirm();
+                display.updateDisplay();
+
+                return;
+            }
+
+
+            if (event.control == ControlId::Fn1) // NO
+            {
+                modalState = ModalState::None;
+                confirmAction = ConfirmAction::None;
+                display.hideConfirm();
+                display.updateDisplay();
+            }
+        }
         
 
     private:
@@ -348,7 +407,7 @@ class MainInputMode : public InputMode
 
 
 
-
+/*
 
 Vu ta structure, ne réécris rien. Le plus simple est d'ajouter un petit état de confirmation dans MainInputMode et d'intercepter seulement les actions qui doivent confirmer.
 
@@ -395,7 +454,7 @@ void showConfirm(const char* text)
 Tu as actuellement :
 
 case FN4 | FN7:
-    /** @todo remove last quarter note */
+    /** @todo remove last quarter note *
     sequencerTimer.removeQuarterNote();
     break;
 
@@ -563,3 +622,4 @@ L'intérêt par rapport au simple `if` :
   * `RESET?`
 
 Ton architecture est déjà proche d'un tracker, donc les modales séparées sont une bonne évolution.
+*/

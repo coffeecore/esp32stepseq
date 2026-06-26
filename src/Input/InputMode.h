@@ -14,12 +14,19 @@ enum class InputModes
 
 using FnMask = uint8_t;
 
+enum class ModalState
+{
+    None,
+    Confirm
+};
+
 typedef struct 
 {
     FnMask pressedMask = 0; // Fn encore enfoncés maintenant
 
     bool holdTriggered = false;
     bool modifierUsed = false;
+    bool holdConsumed = false;
 
     FnMask pressCombo = 0; // tous les Fn ayant participé à la séquence jusqu'au relâchement complet
     FnMask holdCombo = 0;
@@ -76,21 +83,18 @@ constexpr FnMask FN7 = 1u << 7;
 
 class InputMode
 {
+    protected:
+        Input& input;
+        TaskHandle_t displayTaskHandle = nullptr;
+
+        FnState fnState;
+        StepState stepState;
+        ModalState modalState = ModalState::None;
+
     public:
         explicit InputMode(Input& _input)
             : input(_input)
         {
-        }
-
-        void logAction(const InputEvent& event, FnMask fnMask, char* action)
-        {
-            // Serial.printf("[Input][%s]")
-            // Serial.println("[INPUT][Release][step]");
-            // Serial.println(static_cast<uint8_t>(event.control));
-            // Serial.println("Mask");
-            // Serial.println(fnMask);
-            // Serial.println("Step pressed");
-            // Serial.println(static_cast<uint8_t>(stepState.stepId));
         }
 
         virtual void onEnter() {}
@@ -99,6 +103,12 @@ class InputMode
 
         virtual void handleEvent(const InputEvent& event)
         {
+            if (modalState != ModalState::None) {
+                modalAction(event);
+
+                return;
+            }
+
             switch(event.type) {
                 case InputEventType::ButtonPressed:
                 {
@@ -132,14 +142,18 @@ class InputMode
                     // Just check if Fn key is hold
                     // We get bitmask to know if many pressed
                     if (isFn(event.control)) {
+                        if (fnState.modifierUsed) {
+                            break;
+                        }
                         fnState.holdTriggered = true;
 
                         // Snapshot de la combinaison
                         fnState.holdCombo = fnState.pressedMask;
+                        fnHoldAction(event, fnState.holdCombo);
 
-                        if (!fnState.modifierUsed) {
-                            fnHoldAction(event, fnState.holdCombo);
-                        }
+                        // Le hold a effectué son action,
+                        // il ne faudra rien faire au release.
+                        fnState.holdConsumed = true;
                     } else if(isStep(event.control)) {
                         stepState.holdTriggered = true;
 
@@ -172,15 +186,25 @@ class InputMode
                         fnState.pressedMask &= ~fnBit(event.control);
 
                         if (fnState.pressedMask == 0) {
-                            if (fnState.holdTriggered && !fnState.modifierUsed) {
-                                fnHoldReleaseAction(event, fnState.holdCombo);
-                            } else if (!fnState.modifierUsed) {
-                                fnReleaseAction(event, fnState.pressCombo);
+                            if (!fnState.modifierUsed)
+                            {
+                                if (fnState.holdTriggered)
+                                {
+                                    if (!fnState.holdConsumed)
+                                    {
+                                        fnHoldReleaseAction(event, fnState.holdCombo);
+                                    }
+                                }
+                                else
+                                {
+                                    fnReleaseAction(event, fnState.pressCombo);
+                                }
                             }
 
                             fnReleasedAlways(event, fnState.pressCombo);
 
                             fnState.holdTriggered = false;
+                            fnState.holdConsumed = false;
                             fnState.modifierUsed = false;
                             fnState.pressCombo = 0;
                             fnState.holdCombo = 0;
@@ -404,10 +428,7 @@ class InputMode
             // }
         }
 
-    protected:
-        Input& input;
-        TaskHandle_t displayTaskHandle = nullptr;
-
-        FnState fnState;
-        StepState stepState;
+        virtual void modalAction(const InputEvent& event)
+        {
+        }
 };

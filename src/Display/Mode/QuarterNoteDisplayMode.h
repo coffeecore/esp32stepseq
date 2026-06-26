@@ -18,17 +18,6 @@ public:
 
     void handleEvent() override
     {
-        // Serial.println("[Display][MAIN MODE] Handle");
-
-        display.clear();
-
-        // display.drawSequencer();
-        // display.drawTrack();
-        // display.drawPattern();
-
-        display.drawMode("Quarter note mode");
-
-        display.draw();
     }
 
     private:

@@ -296,7 +296,7 @@ class SequencerTimer
 
         void togglePause()
         {
-            if (playState != PlayState::Pause) {
+            if (playState == PlayState::Play) {
                 playState = PlayState::Pause;
 
                 return;
@@ -315,8 +315,6 @@ class SequencerTimer
 
                 return;
             }
-
-            playState = PlayState::Play;
         }
 
         // void setPan(int8_t _pan)
