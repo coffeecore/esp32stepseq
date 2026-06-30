@@ -256,6 +256,19 @@ class SequencerTimer
             timer.setTickDurationInMicroSeconds(computeTickDurationInMicroSeconds());
         }
 
+        void setQuarterNoteStepsCount(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t length)
+        {
+            if (trackIndex >= trackCounts) {
+                return;
+            }
+
+            if (quarterNoteIndex >= quarterNoteCounts) {
+                return;
+            }
+
+            tracks[trackIndex].quarterNotes[quarterNoteIndex].stepsCount = length;
+        }
+
         // void setCurrentPattern(uint8_t _currentPattern)
         // {
         //     if (_currentPattern >= patternCounts) {
@@ -328,10 +341,10 @@ class SequencerTimer
         //     pan = _pan;
         // }
 
-        Track& getTrack(uint8_t trackIndex)
-        {
-            return tracks[trackIndex];
-        }
+        // Track& getTrack(uint8_t trackIndex)
+        // {
+        //     return tracks[trackIndex];
+        // }
 
         /**
          * --- Adder ---
@@ -370,6 +383,9 @@ class SequencerTimer
 
         void addStep(uint8_t trackIndex, uint8_t quarterNoteIndex)
         {
+            if (trackIndex >= trackCounts) {
+                return;
+            }
             // if (quarterNoteIndex >= getPattern(trackIndex, patternIndex).quarterNotesCount) {
             if (quarterNoteIndex >= quarterNoteCounts) {
                 return;
@@ -398,13 +414,21 @@ class SequencerTimer
          */
         void setTrackVolume(uint8_t _trackIndex, uint8_t _volume)
         {
-            Track& track = getTrack(_trackIndex);
+            if (_trackIndex >= trackCounts) {
+                return;
+            }
+
+            Track& track = tracks[_trackIndex];
 
             track.volume = _volume;
         }
 
         void setTrackTranspose(uint8_t _trackIndex, int8_t _transpose)
         {
+            if (_trackIndex >= trackCounts) {
+                return;
+            }
+
             if (_transpose < -12) {
                 _transpose = -12;
             }
@@ -413,10 +437,34 @@ class SequencerTimer
                 _transpose = 12;
             }
 
-            Track& track = getTrack(_trackIndex);
+            Track& track = tracks[_trackIndex];
 
             track.transpose = _transpose;
         }
+
+        void setTrackInstrument(uint8_t _trackIndex, int8_t _instrument)
+        {
+            if (_trackIndex >= trackCounts) {
+                return;
+            }
+
+            if (_instrument >= 12) {
+                return;
+            }
+
+            Track& track = tracks[_trackIndex];
+
+            track.instrument = _instrument;
+        }
+
+        void setSelectedInstrument(int8_t _instrument)
+        {
+            if (_instrument >= 12) {
+                return;
+            }
+
+            selectedInstrument = _instrument;
+        } 
 
         // void toggleStep(uint8_t trackIndex, uint8_t patternIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
         // {
@@ -588,16 +636,16 @@ class SequencerTimer
         void triggerStepOff(Step& step)
         {
             // MIDI note off / stop voice
-            Serial.print("NOTE OFF : ");
-            Serial.println(millis());
+            // Serial.print("NOTE OFF : ");
+            // Serial.println(millis());
         }
 
 
         void triggerStepOn(Step& step)
         {
             // MIDI / GPIO / synth trigger
-            Serial.print("NOTE ON : ");
-            Serial.println(millis());
+            // Serial.print("NOTE ON : ");
+            // Serial.println(millis());
         }
     
     private:

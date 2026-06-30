@@ -70,10 +70,11 @@ class MainDisplayMode : public DisplayMode
             snprintf(
                 buffer,
                 sizeof(buffer),
-                "%3d %3d %02X %01X",
+                "%3d %3d %02X/%02X %01X",
                 sequencerTimer.volume,
                 sequencerTimer.bpm,
                 sequencerTimer.selectedQuarterNote,
+                sequencerTimer.quarterNoteCounts-1,
                 sequencerTimer.selectedInstrument
             );
 

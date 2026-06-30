@@ -103,12 +103,22 @@ class InputMode
 
         virtual void handleEvent(const InputEvent& event)
         {
-            if (modalState != ModalState::None) {
-                modalAction(event);
+            updateStates(event);      // uniquement l'état physique
 
-                return;
+            if (modalState != ModalState::None)
+            {
+                modalAction(event);   // peut ouvrir/fermer une modale
+            }
+            else
+            {
+                dispatchActions(event); // callbacks utilisateur
             }
 
+            cleanupStates(event);     // reset des flags temporaires
+        }
+
+        virtual void updateStates(const InputEvent& event)
+        {
             switch(event.type) {
                 case InputEventType::ButtonPressed:
                 {
@@ -117,21 +127,12 @@ class InputMode
                     if (isFn(event.control)) {
                         fnState.pressedMask |= fnBit(event.control);
                         fnState.pressCombo |= fnBit(event.control);
-
-                        fnPressedAction(event, fnState.pressedMask);
-
                     } else if (isStep(event.control)) {
                         stepState.pressed = true;
                         stepState.stepId = event.control;
 
                         // Snapshot de la combinaison
                         stepState.fnCombo = fnState.pressedMask;
-
-                        stepPressedAction(event, stepState.fnCombo);
-
-                        if (stepState.fnCombo != 0) {
-                            fnState.modifierUsed = true;
-                        }
                     }
 
                     break;
@@ -149,14 +150,67 @@ class InputMode
 
                         // Snapshot de la combinaison
                         fnState.holdCombo = fnState.pressedMask;
+
+                        // Le hold a effectué son action,
+                        // il ne faudra rien faire au release.
+                    } else if(isStep(event.control)) {
+                        stepState.holdTriggered = true;
+                    }
+
+                    break;
+                }
+
+                case InputEventType::ButtonReleased:
+                {
+                    if (isFn(event.control)) {
+                        fnState.pressedMask &= ~fnBit(event.control);
+                    }
+
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+
+
+        virtual void dispatchActions(const InputEvent& event)
+        {
+            switch(event.type) {
+                case InputEventType::ButtonPressed:
+                {
+                    // We save pressed Fn key in bitmask
+                    // If step key, if bitmask Fn set we take it
+                    if (isFn(event.control)) {
+                        fnPressedAction(event, fnState.pressedMask);
+
+                    } else if (isStep(event.control)) {
+                        stepPressedAction(event, stepState.fnCombo);
+
+                        if (stepState.fnCombo != 0) {
+                            fnState.modifierUsed = true;
+                            stepState.stepUsed = true;
+                        }
+                    }
+
+                    break;
+                }
+
+                case InputEventType::ButtonHold:
+                {
+                    // Just check if Fn key is hold
+                    // We get bitmask to know if many pressed
+                    if (isFn(event.control)) {
+                        if (!fnState.modifierUsed) {
+                        // Snapshot de la combinaison
                         fnHoldAction(event, fnState.holdCombo);
 
                         // Le hold a effectué son action,
                         // il ne faudra rien faire au release.
                         fnState.holdConsumed = true;
+                        }
                     } else if(isStep(event.control)) {
-                        stepState.holdTriggered = true;
-
                         stepHoldAction(event, stepState.fnCombo);
                     }
 
@@ -177,14 +231,7 @@ class InputMode
                                 stepReleaseAction(event, stepState.fnCombo);
                             }
                         }
-                        stepReleasedAlways(event, stepState.fnCombo);
-                        stepState.pressed = false;
-                        stepState.holdTriggered = false;
-                        stepState.fnCombo = 0;
-                        stepState.stepUsed = false;
                     } else if (isFn(event.control)) {
-                        fnState.pressedMask &= ~fnBit(event.control);
-
                         if (fnState.pressedMask == 0) {
                             if (!fnState.modifierUsed)
                             {
@@ -202,12 +249,6 @@ class InputMode
                             }
 
                             fnReleasedAlways(event, fnState.pressCombo);
-
-                            fnState.holdTriggered = false;
-                            fnState.holdConsumed = false;
-                            fnState.modifierUsed = false;
-                            fnState.pressCombo = 0;
-                            fnState.holdCombo = 0;
                         }
                     }
 
@@ -216,11 +257,6 @@ class InputMode
 
                 case InputEventType::EncoderTurned:
                 {
-                    // No encoder nothing to do
-                    if (!isEncoder(event.control)) {
-                        break;
-                    }
-
                     // We have bitmask because we pressed fn key before, we can do something based on or not
                     encoderAction(event, fnState.pressedMask);
 
@@ -239,6 +275,33 @@ class InputMode
 
                 default:
                     break;
+            }
+        }
+
+        void cleanupStates(const InputEvent& event)
+        {
+            if (event.type != InputEventType::ButtonReleased)
+                return;
+
+            if (isStep(event.control) &&
+                stepState.pressed &&
+                event.control == stepState.stepId)
+            {
+                stepState.pressed = false;
+                stepState.stepUsed = false;
+                stepState.holdTriggered = false;
+                stepState.fnCombo = 0;
+            }
+            else if (isFn(event.control))
+            {
+                if (fnState.pressedMask == 0)
+                {
+                    fnState.modifierUsed = false;
+                    fnState.holdTriggered = false;
+                    fnState.holdConsumed = false;
+                    fnState.pressCombo = 0;
+                    fnState.holdCombo = 0;
+                }
             }
         }
 
@@ -432,3 +495,370 @@ class InputMode
         {
         }
 };
+
+
+/*Oui. Avec les contraintes que tu as aujourd'hui, je ne mettrais **pas** tout dans `updateStates()`. Je garderais les trois phases, mais avec une vraie séparation des responsabilités.
+
+Je partirais sur ça :
+
+```cpp
+handleEvent(event)
+{
+    updateStates(event);      // uniquement l'état physique
+
+    if (modalState != ModalState::None)
+    {
+        modalAction(event);   // peut ouvrir/fermer une modale
+    }
+    else
+    {
+        dispatchActions(event); // callbacks utilisateur
+    }
+
+    cleanupStates(event);     // reset des flags temporaires
+}
+```
+
+---
+
+# updateStates()
+
+Ne fait **que** l'état matériel.
+
+Exemple :
+
+```cpp
+ButtonPressed Fn
+    pressedMask |= bit
+    pressCombo  |= bit
+
+ButtonPressed Step
+    stepState.pressed = true;
+    stepState.stepId = event.control;
+    stepState.fnCombo = fnState.pressedMask;
+
+ButtonHold Fn
+    holdTriggered = true;
+    holdCombo = pressedMask;
+
+ButtonHold Step
+    stepState.holdTriggered = true;
+
+ButtonReleased Fn
+    pressedMask &= ~bit;
+
+ButtonReleased Step
+    // rien
+```
+
+Rien d'autre.
+
+Pas de reset.
+
+Pas de callback.
+
+---
+
+# dispatchActions()
+
+Là tu reprends quasiment ton ancien code.
+
+Par contre tu remets les protections.
+
+## ButtonPressed
+
+```cpp
+Fn
+    fnPressedAction()
+
+Step
+    stepPressedAction()
+
+    if(stepState.fnCombo)
+        fnState.modifierUsed = true;
+```
+
+---
+
+## Encoder
+
+```cpp
+encoderAction()
+
+if(fnState.pressedMask)
+    fnState.modifierUsed = true;
+
+if(stepState.pressed)
+    stepState.stepUsed = true;
+```
+
+Exactement comme avant.
+
+---
+
+## Hold
+
+```cpp
+Fn
+
+if(fnState.modifierUsed)
+    return;
+
+fnHoldAction()
+
+fnState.holdConsumed = true;
+```
+
+Donc :
+
+```
+Fn4
+hold
+```
+
+→ OK
+
+mais
+
+```
+Fn4
+tourne encodeur
+hold
+```
+
+→ pas de hold.
+
+Comme avant.
+
+---
+
+Step :
+
+```cpp
+stepHoldAction(...)
+```
+
+---
+
+## Release Step
+
+Tu retrouves ton ancien comportement :
+
+```cpp
+if(!stepState.stepUsed)
+{
+    if(stepState.holdTriggered)
+        stepHoldReleaseAction(...);
+    else
+        stepReleaseAction(...);
+}
+
+stepReleasedAlways(...);
+```
+
+Donc
+
+```
+Step
+```
+
+=> toggle
+
+---
+
+```
+Step
+Encoder
+Release
+```
+
+=> PAS de toggle.
+
+---
+
+```
+Fn
+Step
+Release
+```
+
+=> PAS de toggle.
+
+Parce que `modifierUsed` aura été positionné au press du Step avec Fn.
+
+---
+
+## Release Fn
+
+Pareil :
+
+```cpp
+if(fnState.pressedMask==0)
+{
+    if(!fnState.modifierUsed)
+    {
+        if(fnState.holdTriggered)
+        {
+            if(!fnState.holdConsumed)
+                fnHoldReleaseAction(...);
+        }
+        else
+        {
+            fnReleaseAction(...);
+        }
+    }
+
+    fnReleasedAlways(...);
+}
+```
+
+---
+
+# cleanupStates()
+
+Seulement ici :
+
+Release Step
+
+```cpp
+stepState.pressed=false;
+stepState.stepUsed=false;
+stepState.holdTriggered=false;
+stepState.fnCombo=0;
+```
+
+---
+
+Release dernier Fn
+
+```cpp
+if(fnState.pressedMask==0)
+{
+    fnState.modifierUsed=false;
+    fnState.holdTriggered=false;
+    fnState.holdConsumed=false;
+    fnState.pressCombo=0;
+    fnState.holdCombo=0;
+}
+```
+
+```cpp
+void cleanupStates(const InputEvent& event)
+{
+    if (event.type != InputEventType::ButtonReleased)
+        return;
+
+    if (isStep(event.control) &&
+        stepState.pressed &&
+        event.control == stepState.stepId)
+    {
+        stepState.pressed = false;
+        stepState.stepUsed = false;
+        stepState.holdTriggered = false;
+        stepState.fnCombo = 0;
+    }
+    else if (isFn(event.control))
+    {
+        if (fnState.pressedMask == 0)
+        {
+            fnState.modifierUsed = false;
+            fnState.holdTriggered = false;
+            fnState.holdConsumed = false;
+            fnState.pressCombo = 0;
+            fnState.holdCombo = 0;
+        }
+    }
+}
+```
+
+---
+
+# Et la modale ?
+
+C'est là que cette architecture devient intéressante.
+
+Pendant le hold :
+
+```
+Fn4
+Fn7
+```
+
+↓
+
+```
+ButtonHold
+```
+
+↓
+
+```
+dispatchActions()
+```
+
+↓
+
+```
+fnHoldAction()
+```
+
+↓
+
+```cpp
+modalState = Confirm;
+display.showConfirm(...);
+```
+
+La boîte apparaît **immédiatement** pendant le maintien.
+
+Ensuite :
+
+```
+Fn7 release
+Fn4 release
+```
+
+Aucun callback Fn ne sera exécuté puisque `modalState != None`.
+
+Mais **updateStates() continue de tourner**, donc `pressedMask` redevient bien à 0.
+
+Ensuite :
+
+```
+Fn0
+```
+
+↓
+
+`modalAction()`
+
+↓
+
+YES
+
+ou
+
+```
+Fn1
+```
+
+↓
+
+NO
+
+---
+
+# Ce que ça garantit
+
+Tu conserves tous les comportements que tu voulais :
+
+* ✅ `Fn0 + Fn1` puis hold → la modale apparaît pendant le maintien.
+* ✅ `Step` seul → toggle au relâchement.
+* ✅ `Fn + Step` → pas de toggle.
+* ✅ `Step + Encoder` → pas de toggle.
+* ✅ `Fn + Encoder` → l'action de l'encodeur uniquement, pas de `fnReleaseAction()`.
+* ✅ `Fn + Step + Encoder` → édition du step uniquement, pas de toggle au relâchement.
+* ✅ Les modales n'empêchent jamais la mise à jour des états internes, seulement les callbacks métier.
+
+À mes yeux, c'est la version la plus propre de ton architecture actuelle, sans tout réécrire ni introduire de nouveaux états ou d'énumérations supplémentaires.
+*/
