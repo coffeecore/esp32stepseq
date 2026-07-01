@@ -63,8 +63,12 @@ void setup() {
     sequencerTimer.addTrack();
     sequencerTimer.addTrack();
     // sequencerTimer.addPattern();
-    sequencerTimer.addQuarterNote();
-    sequencerTimer.addQuarterNote();
+
+
+    // sequencerTimer.addQuarterNote();
+    // sequencerTimer.addQuarterNote();
+
+
     // sequencerTimer.addQuarterNote();
     // sequencerTimer.addQuarterNote();
     // sequencerTimer.addQuarterNote();
@@ -74,42 +78,42 @@ void setup() {
     //         sequencerTimer.addStep(i, sequencerTimer.selectedPattern, 0);
     //     }
     // }
-    sequencerTimer.addStep(0, 0);
-    sequencerTimer.addStep(0, 0);
-    sequencerTimer.addStep(0, 0);
-    sequencerTimer.addStep(0, 0);
+    // sequencerTimer.addStep(0, 0);
+    // sequencerTimer.addStep(0, 0);
+    // sequencerTimer.addStep(0, 0);
+    // sequencerTimer.addStep(0, 0);
 
-    sequencerTimer.addStep(1, 0);
-    sequencerTimer.addStep(1, 0);
-    sequencerTimer.addStep(1, 0);
-    sequencerTimer.tracks[1].quarterNotes->stepsCount = 3;
+    // sequencerTimer.addStep(1, 0);
+    // sequencerTimer.addStep(1, 0);
+    // sequencerTimer.addStep(1, 0);
+    // sequencerTimer.tracks[1].quarterNotes->stepsCount = 3;
 
-    sequencerTimer.addStep(2, 0);
-    sequencerTimer.addStep(2, 0);
+    // sequencerTimer.addStep(2, 0);
+    // sequencerTimer.addStep(2, 0);
 
-    sequencerTimer.addStep(3, 0);
+    // sequencerTimer.addStep(3, 0);
 
-    sequencerTimer.addStep(4, 0);
-    sequencerTimer.addStep(4, 0);
-    sequencerTimer.addStep(4, 0);
-    sequencerTimer.addStep(4, 0);
+    // sequencerTimer.addStep(4, 0);
+    // sequencerTimer.addStep(4, 0);
+    // sequencerTimer.addStep(4, 0);
+    // sequencerTimer.addStep(4, 0);
 
 
 
-    sequencerTimer.toggleStep(0, 0, 0);
-    sequencerTimer.toggleStep(0, 0, 2);
-    sequencerTimer.toggleStep(0, 0, 3);
+    // sequencerTimer.toggleStep(0, 0, 0);
+    // sequencerTimer.toggleStep(0, 0, 2);
+    // sequencerTimer.toggleStep(0, 0, 3);
 
-    sequencerTimer.toggleStep(1, 0, 0);
-    sequencerTimer.toggleStep(1, 0, 2);
+    // sequencerTimer.toggleStep(1, 0, 0);
+    // sequencerTimer.toggleStep(1, 0, 2);
 
-    sequencerTimer.toggleStep(2, 0, 0);
+    // sequencerTimer.toggleStep(2, 0, 0);
 
-    sequencerTimer.toggleStep(3, 0, 0);
+    // sequencerTimer.toggleStep(3, 0, 0);
 
-    sequencerTimer.toggleStep(4, 0, 1);
-    sequencerTimer.toggleStep(4, 0, 2);
-    sequencerTimer.toggleStep(4, 0, 4);
+    // sequencerTimer.toggleStep(4, 0, 1);
+    // sequencerTimer.toggleStep(4, 0, 2);
+    // sequencerTimer.toggleStep(4, 0, 4);
 
     display.registerMode(DisplayModes::Main, &mainDisplayMode);
     display.registerMode(DisplayModes::Step, &stepDisplayMode);

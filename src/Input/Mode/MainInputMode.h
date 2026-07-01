@@ -28,11 +28,8 @@ class MainInputMode : public InputMode
         {
         }
 
-        void initEncoder()
+        void setGlobalEncoderValues()
         {
-            /**
-             * @todo constant for volume min max, bpm min max
-             */
             input.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
             input.setEncoderValue(ControlId::Encoder0, sequencerTimer.volume);
 
@@ -40,10 +37,26 @@ class MainInputMode : public InputMode
             input.setEncoderValue(ControlId::Encoder1, sequencerTimer.bpm);
         }
 
+        void setNavigationEncoderValues()
+        {
+            uint8_t Tcount = max<uint8_t>(1, sequencerTimer.trackCounts);
+            if (0 < Tcount-1) {
+                input.setEncoderBoundaries(ControlId::Encoder0, 0, Tcount-1, true);
+                input.setEncoderValue(ControlId::Encoder0, sequencerTimer.selectedTrack);
+            }
+
+            QuarterNote& quarterNote = sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote];
+            uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
+            if (0 < stepsCount-1) {
+                input.setEncoderBoundaries(ControlId::Encoder1, -1, stepsCount, true);
+                input.setEncoderValue(ControlId::Encoder1, sequencerTimer.selectedStep);
+            }
+        }
+
         void onEnter() override
         {
             Serial.println("=== MAIN MODE ===");
-            initEncoder();
+            setGlobalEncoderValues();
         }
 
         void onExit() override
@@ -54,20 +67,64 @@ class MainInputMode : public InputMode
     protected:
         void fnReleasedAlways(const InputEvent& event, FnMask fnMask) override
         {
-            initEncoder();
+            setGlobalEncoderValues();
         }
 
         void stepReleasedAlways(const InputEvent& event, FnMask fnMask) override
         {
-            initEncoder();
+            setGlobalEncoderValues();
         }
 
         void stepPressedAction(const InputEvent& event, FnMask fnMask) override
         {
+            switch (fnMask)
+            {
+                case 0:
+                {
+                    uint8_t row = (static_cast<uint8_t>(stepState.stepId)) / 4;
+                    uint8_t col = (static_cast<uint8_t>(stepState.stepId)) % 4;
+
+                    Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+
+                    input.setEncoderBoundaries(ControlId::Encoder0, 0, 11, true);
+                    input.setEncoderValue(ControlId::Encoder0, step.note % 12);
+
+                    input.setEncoderBoundaries(ControlId::Encoder1, -1, 9, false);
+                    input.setEncoderValue(ControlId::Encoder1, step.note / 12 - 1);
+
+                    break;
+                }
+                case FN2:
+                {
+                    uint8_t row = (static_cast<uint8_t>(stepState.stepId)) / 4;
+                    uint8_t col = (static_cast<uint8_t>(stepState.stepId)) % 4;
+
+                    Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+
+                    input.setEncoderBoundaries(ControlId::Encoder0, 1, sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].ticksByStep, false);
+                    input.setEncoderValue(ControlId::Encoder0, step.length);
+
+                    break;
+                }
+                case FN3:
+                {
+                    uint8_t row = (static_cast<uint8_t>(stepState.stepId)) / 4;
+                    uint8_t col = (static_cast<uint8_t>(stepState.stepId)) % 4;
+
+                    Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+
+                    input.setEncoderBoundaries(ControlId::Encoder1, 0, 11, true);
+                    input.setEncoderValue(ControlId::Encoder1, step.instrument);
+
+                    break;
+                }
+            }
         }
 
         void stepReleaseAction(const InputEvent& event, FnMask fnMask) override
         {
+            Serial.println("Step release action");
+            Serial.println((static_cast<uint8_t>(fnMask)));
             switch (fnMask)
             {
                 case 0:
@@ -81,6 +138,7 @@ class MainInputMode : public InputMode
                 }
                 case FN1:
                 {
+                    Serial.println("SET QUARTER NOTE LENGTH");
                     /** @implements change quarter note length */
                     uint8_t row = (static_cast<uint8_t>(event.control)) / 4;
                     uint8_t col = (static_cast<uint8_t>(event.control)) % 4;
@@ -88,8 +146,6 @@ class MainInputMode : public InputMode
 
                     break;
                 }
-                default:
-                    break;
             }
         }
 
@@ -99,24 +155,7 @@ class MainInputMode : public InputMode
             {
                 case FN1:
                 {
-                    /** 
-                     * @implements set encoder 0 value and range to choose track
-                     */
-                    uint8_t Tcount = max<uint8_t>(1, sequencerTimer.trackCounts);
-                    if (0 < Tcount-1) {
-                        input.setEncoderBoundaries(ControlId::Encoder0, 0, Tcount-1, true);
-                        input.setEncoderValue(ControlId::Encoder0, sequencerTimer.selectedTrack);
-                    }
-
-                    /**
-                     * @implements set encoder 1 value and range to choose step
-                     */
-                    QuarterNote& quarterNote = sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote];
-                    uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
-                    if (0 < stepsCount-1) {
-                        input.setEncoderBoundaries(ControlId::Encoder1, -1, stepsCount, true);
-                        input.setEncoderValue(ControlId::Encoder1, sequencerTimer.selectedStep);
-                    }
+                    setNavigationEncoderValues();
 
                     break;
                 }
@@ -129,7 +168,7 @@ class MainInputMode : public InputMode
 
                     /** @implements  set encoder 1 value and range for track transpose */
                     input.setEncoderBoundaries(ControlId::Encoder1, -12, 12, false);
-                    input.setEncoderValue(ControlId::Encoder1, sequencerTimer.track.transpose);
+                    input.setEncoderValue(ControlId::Encoder1, track.transpose);
                     break;
                 }
 
@@ -145,9 +184,6 @@ class MainInputMode : public InputMode
                     input.setEncoderValue(ControlId::Encoder1, sequencerTimer.selectedInstrument);
                     break;
                 }
-            
-                default:
-                    break;
             }
         }
 
@@ -174,8 +210,6 @@ class MainInputMode : public InputMode
                     /** @todo Go to instrument edition screen */
                     break;
                 }             
-                default:
-                    break;
             }
         }
 
@@ -183,29 +217,6 @@ class MainInputMode : public InputMode
         {
             switch (fnMask)
             {
-                case FN0:
-                {
-                    /** @implements toggle play stop */
-                    sequencerTimer.toggleStop();
-
-                    break;
-                }
-                case FN1:
-                {
-                    /** @implements remove last quarter note confirm */
-                    confirmAction = ConfirmAction::DeleteQuarterNote;
-                    modalState = ModalState::Confirm;
-
-                    display.showConfirm("Delete quarter note ?");
-                    break;
-                }                
-                case FN2:
-                {
-                    /** @todo Mute selected track */
-                    break;
-                }
-                default:
-                    break;
             }
         }
 
@@ -235,6 +246,9 @@ class MainInputMode : public InputMode
                     }
                     case FN2:
                     {
+                        Serial.println("SET LENGTH STEP");
+                        Serial.println(col);
+                        Serial.println(event.value);
                         /** @implements change step length */
                         if (encoder == ControlId::Encoder0) {
                             sequencerTimer.setStepLength(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, event.value);
@@ -291,6 +305,8 @@ class MainInputMode : public InputMode
                         if (sequencerTimer.selectedStep >= sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount) {
                             sequencerTimer.setSelectedStep(sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount-1);
                         }
+
+                        setNavigationEncoderValues();
                     }
 
                     /** @implements  choose quarter note */
@@ -298,20 +314,17 @@ class MainInputMode : public InputMode
                         if (event.value < 0) {
                             sequencerTimer.setSelectedQuarterNote(sequencerTimer.selectedQuarterNote-1);
                             sequencerTimer.setSelectedStep(sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount-1);
-
-                            break;
-                        }
-                        if (event.value >= sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount) {
+                        } else if (event.value >= sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount) {
                             sequencerTimer.setSelectedQuarterNote(sequencerTimer.selectedQuarterNote+1);
                             sequencerTimer.setSelectedStep(0);
-
-                            break;
+                        } else {
+                            sequencerTimer.setSelectedStep(event.value);
                         }
 
-                        sequencerTimer.setSelectedStep(event.value);
-
-                        break;
+                        setNavigationEncoderValues();
                     }
+
+                    break;
                 }
 
                 case FN2:
@@ -347,11 +360,37 @@ class MainInputMode : public InputMode
         {
             switch (fnMask)
             {
+                case FN0:
+                {
+                    /** @implements toggle play stop */
+                    sequencerTimer.toggleStop();
+
+                    break;
+                }         
+                case FN2:
+                {
+                    /** @todo Mute selected track */
+                    sequencerTimer.toggleTrackMute(sequencerTimer.selectedTrack);
+                    break;
+                }
+                case FN1:
+                {
+                    /** @implements remove last quarter note confirm */
+                    confirmAction = ConfirmAction::DeleteQuarterNote;
+                    modalState = ModalState::Confirm;
+                    fnState.holdConsumed = true;
+                    fnState.modifierUsed = true;
+
+                    display.showConfirm("Delete quarter note ?");
+                    break;
+                }
                 case FN4:
                 {
                     /** @implements clear entire screen confirm */
                     confirmAction = ConfirmAction::DeleteQuarterNote;
                     modalState = ModalState::Confirm;
+                    fnState.holdConsumed = true;
+                    fnState.modifierUsed = true;
 
                     display.showConfirm("Clear screen ?");
                     break;
@@ -365,7 +404,7 @@ class MainInputMode : public InputMode
 
         void modalAction(const InputEvent& event) override
         {
-            if (event.type != InputEventType::ButtonReleased)
+            if (event.type != InputEventType::ButtonPressed)
                 return;
 
             if (event.control == ControlId::Fn0) // YES

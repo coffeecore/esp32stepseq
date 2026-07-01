@@ -43,6 +43,7 @@ typedef struct {
     QuarterNote quarterNotes[64];
     int8_t transpose = 0;
     uint8_t volume = 255;
+    bool mute = false;
 
     uint8_t instrument = 0;
 } Track;
@@ -455,6 +456,17 @@ class SequencerTimer
             Track& track = tracks[_trackIndex];
 
             track.instrument = _instrument;
+        }
+
+        void toggleTrackMute(uint8_t _trackIndex)
+        {
+            if (_trackIndex >= trackCounts) {
+                return;
+            }
+
+            Track& track = tracks[_trackIndex];
+
+            track.mute = !track.mute;
         }
 
         void setSelectedInstrument(int8_t _instrument)

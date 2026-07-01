@@ -73,8 +73,8 @@ class MainDisplayMode : public DisplayMode
                 "%3d %3d %02X/%02X %01X",
                 sequencerTimer.volume,
                 sequencerTimer.bpm,
-                sequencerTimer.selectedQuarterNote,
-                sequencerTimer.quarterNoteCounts-1,
+                sequencerTimer.quarterNoteCounts > 0 ? sequencerTimer.selectedQuarterNote + 1: sequencerTimer.selectedQuarterNote,
+                sequencerTimer.quarterNoteCounts,
                 sequencerTimer.selectedInstrument
             );
 
@@ -98,6 +98,10 @@ class MainDisplayMode : public DisplayMode
                 );
 
                 u8g2.drawStr((i - display.displayedTrack)*60, u8g2.getAscent() + 1 * u8g2.getMaxCharHeight(), buffer);
+
+                if (sequencerTimer.quarterNoteCounts <= 0) {
+                    continue;
+                }
 
                 QuarterNote& qn = sequencerTimer.tracks[i].quarterNotes[sequencerTimer.selectedQuarterNote];
 

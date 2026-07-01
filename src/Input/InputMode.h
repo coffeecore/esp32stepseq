@@ -103,18 +103,21 @@ class InputMode
 
         virtual void handleEvent(const InputEvent& event)
         {
-            updateStates(event);      // uniquement l'état physique
+            // updateStates(event);
+            if (modalState == ModalState::None)
+                updateStates(event);
 
             if (modalState != ModalState::None)
             {
-                modalAction(event);   // peut ouvrir/fermer une modale
-            }
-            else
-            {
-                dispatchActions(event); // callbacks utilisateur
+                modalAction(event);
+                cleanupStates(event);
+
+                return;
             }
 
-            cleanupStates(event);     // reset des flags temporaires
+            dispatchActions(event);
+
+            cleanupStates(event);
         }
 
         virtual void updateStates(const InputEvent& event)
@@ -132,7 +135,9 @@ class InputMode
                         stepState.stepId = event.control;
 
                         // Snapshot de la combinaison
-                        stepState.fnCombo = fnState.pressedMask;
+                        // Serial.println("Snapshot pressed mask");
+                        // Serial.println((static_cast<uint8_t>(fnState.pressedMask)));
+                        // stepState.fnCombo = fnState.pressedMask;
                     }
 
                     break;
@@ -209,6 +214,8 @@ class InputMode
                         // Le hold a effectué son action,
                         // il ne faudra rien faire au release.
                         fnState.holdConsumed = true;
+
+                        fnState.modifierUsed = true;
                         }
                     } else if(isStep(event.control)) {
                         stepHoldAction(event, stepState.fnCombo);
@@ -224,11 +231,13 @@ class InputMode
                         event.control == stepState.stepId
                     )
                     {
+                        FnMask fnCombo = fnState.pressedMask;
+
                         if (!stepState.stepUsed) {
                             if (stepState.holdTriggered) {
-                                stepHoldReleaseAction(event, stepState.fnCombo);
+                                stepHoldReleaseAction(event, fnCombo);
                             } else {
-                                stepReleaseAction(event, stepState.fnCombo);
+                                stepReleaseAction(event, fnCombo);
                             }
                         }
                     } else if (isFn(event.control)) {
