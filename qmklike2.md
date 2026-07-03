@@ -373,3 +373,243 @@ ou
 ### 👉 migration automatique de TON code actuel (ligne par ligne supprimable)
 
 dis-moi.
+
+
+
+
+Tu as raison. Restons sur **InputEngine + Layer**, sans ajouter une nouvelle abstraction.
+
+Le principe est simple : **le LayerResolver ne décide que de la layer active**. Les actions "tap/hold" restent dans `InputEngine`.
+
+## Je modifierais simplement `InputEngine`
+
+On ajoute une phase `updateHoldActions()`.
+
+```cpp
+void InputEngine::update()
+{
+    updateHoldActions();
+
+    resolveLayer();
+
+    currentLayer->applyEncoderMapping(input);
+    currentLayer->applyEncoderValues(input);
+}
+```
+
+Cette fonction est appelée à chaque boucle (ou toutes les quelques ms).
+
+---
+
+## Le contexte
+
+On enrichit seulement le contexte.
+
+```cpp
+struct ButtonState
+{
+    bool pressed = false;
+    bool holdTriggered = false;
+    uint32_t pressedTime = 0;
+};
+
+struct InputContext
+{
+    FnMask fnMask = 0;
+
+    bool stepHeld = false;
+    ControlId stepId = ControlId::None;
+
+    ModalState modal = ModalState::None;
+
+    ButtonState fn0;
+    ButtonState fn1;
+    ButtonState fn2;
+    ButtonState fn3;
+};
+```
+
+Rien de plus.
+
+---
+
+## updateContext()
+
+Quand on appuie :
+
+```cpp
+case InputEventType::ButtonPressed:
+
+    if (event.control == ControlId::Fn1)
+    {
+        ctx.fnMask |= FN1;
+
+        ctx.fn1.pressed = true;
+        ctx.fn1.holdTriggered = false;
+        ctx.fn1.pressedTime = millis();
+    }
+
+    break;
+```
+
+Quand on relâche :
+
+```cpp
+case InputEventType::ButtonReleased:
+
+    if (event.control == ControlId::Fn1)
+    {
+        ctx.fnMask &= ~FN1;
+
+        if (!ctx.fn1.holdTriggered)
+        {
+            addQuarterNote();
+        }
+
+        ctx.fn1.pressed = false;
+    }
+
+    break;
+```
+
+---
+
+## Gestion du hold
+
+Dans `updateHoldActions()` :
+
+```cpp
+void InputEngine::updateHoldActions()
+{
+    if (ctx.fn1.pressed &&
+        !ctx.fn1.holdTriggered &&
+        millis() - ctx.fn1.pressedTime > HOLD_TIME)
+    {
+        ctx.fn1.holdTriggered = true;
+
+        deleteLastQuarterNote();
+    }
+}
+```
+
+C'est tout.
+
+---
+
+# Même chose pour Fn0
+
+```cpp
+if (ctx.fn0.pressed &&
+    !ctx.fn0.holdTriggered &&
+    millis() - ctx.fn0.pressedTime > HOLD_TIME)
+{
+    ctx.fn0.holdTriggered = true;
+
+    stop();
+}
+```
+
+Au release :
+
+```cpp
+if (!ctx.fn0.holdTriggered)
+{
+    playPause();
+}
+```
+
+---
+
+# Même chose pour Fn2
+
+```cpp
+if (ctx.fn2.pressed &&
+    !ctx.fn2.holdTriggered &&
+    millis() - ctx.fn2.pressedTime > HOLD_TIME)
+{
+    ctx.fn2.holdTriggered = true;
+
+    muteTrack();
+}
+```
+
+---
+
+# Même chose pour les steps
+
+Dans `updateContext()` :
+
+```cpp
+if (isStep(event.control))
+{
+    ctx.stepHeld = true;
+    ctx.stepId = event.control;
+
+    ctx.step.pressed = true;
+    ctx.step.holdTriggered = false;
+    ctx.step.pressedTime = millis();
+}
+```
+
+Puis :
+
+```cpp
+if (ctx.step.pressed &&
+    !ctx.step.holdTriggered &&
+    millis() - ctx.step.pressedTime > HOLD_TIME)
+{
+    ctx.step.holdTriggered = true;
+
+    selectStep(ctx.stepId);
+}
+```
+
+---
+
+# Le resolver ne change quasiment pas
+
+Il continue simplement à déterminer le contexte actif :
+
+```cpp
+resolveLayer()
+{
+    if (ctx.modal != ModalState::None)
+        currentLayer = &modal;
+
+    else if (ctx.stepHeld)
+    {
+        if (ctx.fnMask & FN2)
+            currentLayer = &stepLength;
+
+        else if (ctx.fnMask & FN3)
+            currentLayer = &stepInstrument;
+
+        else
+            currentLayer = &stepEdit;
+    }
+    else if ((ctx.fnMask & (FN1 | FN2)) == (FN1 | FN2))
+    {
+        currentLayer = &quarterNavigation;
+    }
+    else if (ctx.fnMask & FN1)
+    {
+        currentLayer = &navigation;
+    }
+    else if (ctx.fnMask & FN2)
+    {
+        currentLayer = &track;
+    }
+    else if (ctx.fnMask & FN3)
+    {
+        currentLayer = &globalInstrument;
+    }
+    else
+    {
+        currentLayer = &global;
+    }
+}
+```
+
+---
+
+Je pense que c'est la bonne limite : **les layers ne font que mapper les entrées (encodeurs, boutons, etc.) selon le contexte**, tandis que **`InputEngine` reste responsable du cycle de vie des touches (press → hold → release)**. Tu n'ajoutes qu'une seule fonction (`updateHoldActions()`) et quelques champs dans `InputContext`, sans introduire une nouvelle classe ou un système supplémentaire. C'est une évolution minimale du design initial.

@@ -4,11 +4,11 @@
 #include "Arduino.h"
 #include "Constants.h"
 #include "SequencerTimer.h"
-// #include <Bounce2.h>
 #include <Keypad.h>
 #include "InputEvent.h"
 #include "Display/Display.h"
-#include "InputMode.h"
+#include "RotaryEncoder.h"
+#include "Input/InputEngine.h"
 
 class Input
 {
@@ -18,8 +18,9 @@ class Input
         InputEvent ringBuffer[32];
         uint8_t writeIndex = 0;
         uint8_t readIndex = 0;
+        RotaryEncoder& rotaryEncoders;
 
-        Input(SequencerTimer& _sequencerTimer):
+        Input(SequencerTimer& _sequencerTimer, InputEngine& _inputEngine, RotaryEncoder& _rotaryEncoders):
             sequencerTimer(_sequencerTimer),
             pad(
                 makeKeymap(Constants::KEY_MATRIX),
@@ -27,7 +28,9 @@ class Input
                 Constants::COLS_PINS,
                 sizeof(Constants::ROWS_PINS) / sizeof(Constants::ROWS_PINS[0]),
                 sizeof(Constants::COLS_PINS) / sizeof(Constants::COLS_PINS[0])
-            )
+            ),
+            inputEngine(_inputEngine),
+            rotaryEncoders(_rotaryEncoders)
         {
         }
 
@@ -36,10 +39,10 @@ class Input
             displayTaskHandle = handle;
         }
 
-        void registerMode(InputModes mode, InputMode* instance)
-        {
-            modes[static_cast<uint8_t>(mode)] = instance;
-        }
+        // void registerMode(InputModes mode, InputMode* instance)
+        // {
+        //     modes[static_cast<uint8_t>(mode)] = instance;
+        // }
 
         uint8_t getButtonIndex(char key) const
         {
@@ -86,39 +89,39 @@ class Input
             return buttonIndex - 4;
         }
 
-        void setMode(InputModes mode)
-        {
-            portENTER_CRITICAL(&mux);
-            // Reinit ring buffer
-            readIndex = 0;
-            writeIndex = 0;
+        // void setMode(InputModes mode)
+        // {
+        //     portENTER_CRITICAL(&mux);
+        //     // Reinit ring buffer
+        //     readIndex = 0;
+        //     writeIndex = 0;
 
-            if (currentMode) {
-                currentMode->onExit();
-            }
+        //     // if (currentMode) {
+        //     //     currentMode->onExit();
+        //     // }
 
-            currentMode = modes[static_cast<uint8_t>(mode)];
+        //     // currentMode = modes[static_cast<uint8_t>(mode)];
 
-            if (currentMode) {
-                currentMode->onEnter();
-            }
-            portEXIT_CRITICAL(&mux);
-        }
+        //     if (currentMode) {
+        //     //     currentMode->onEnter();
+        //     // }
+        //     portEXIT_CRITICAL(&mux);
+        // }
 
         // void setDisplayMode(DisplayModes mode)
         // {
         //     display.setMode(mode);
         // }
 
-        void setEncoderBoundaries(ControlId encoder, long minEncoderValue, long maxEncoderValue, bool circleValues )
-        {
-            rotaryEncoders[controlToEncoder(encoder)].setBoundaries(minEncoderValue, maxEncoderValue, circleValues);
-        }
+        // void setEncoderBoundaries(ControlId encoder, long minEncoderValue, long maxEncoderValue, bool circleValues )
+        // {
+        //     rotaryEncoders[controlToEncoder(encoder)].setBoundaries(minEncoderValue, maxEncoderValue, circleValues);
+        // }
 
-        void setEncoderValue(ControlId encoder, long newValue )
-        {
-            rotaryEncoders[controlToEncoder(encoder)].setEncoderValue(newValue);
-        }
+        // void setEncoderValue(ControlId encoder, long newValue )
+        // {
+        //     rotaryEncoders[controlToEncoder(encoder)].setEncoderValue(newValue);
+        // }
 
         void begin()
         {
@@ -130,19 +133,19 @@ class Input
             //     rotaryEncoderButtons[i].setPressedState(LOW);
             // }
 
-            for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
-                rotaryEncoders[i] = AiEsp32RotaryEncoder(Constants::ROTARY_ENCODERS_PIN[i][0], Constants::ROTARY_ENCODERS_PIN[i][1], Constants::ROTARY_ENCODERS_PIN[i][2], -1, 4);
+            // for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+            //     rotaryEncoders[i] = AiEsp32RotaryEncoder(Constants::ROTARY_ENCODERS_PIN[i][0], Constants::ROTARY_ENCODERS_PIN[i][1], Constants::ROTARY_ENCODERS_PIN[i][2], -1, 4);
 
-                rotaryEncoders[i].begin();
-                // rotaryEncoders[i].setup(readEncoderISR);
-                rotaryEncoders[i].setAcceleration(0);
-            }
+            //     rotaryEncoders[i].begin();
+            //     // rotaryEncoders[i].setup(readEncoderISR);
+            //     rotaryEncoders[i].setAcceleration(0);
+            // }
 
-            rotaryEncoders[0].setup(readEncoder0ISR);
-             rotaryEncoders[1].setup(readEncoder1ISR);
+            // rotaryEncoders[0].setup(readEncoder0ISR);
+            //  rotaryEncoders[1].setup(readEncoder1ISR);
 
 
-            setMode(InputModes::Main);
+            // setMode(InputModes::Main);
 
 
             xTaskCreatePinnedToCore(
@@ -166,23 +169,23 @@ class Input
             );
         }
 
-        static void IRAM_ATTR readEncoder0ISR()
-        {
-            if (instance != nullptr) {
-            //     for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
-                    instance->rotaryEncoders[0].readEncoder_ISR();
-            //     }
-            }
-        }
+        // static void IRAM_ATTR readEncoder0ISR()
+        // {
+        //     if (instance != nullptr) {
+        //     //     for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+        //             instance->rotaryEncoders[0].readEncoder_ISR();
+        //     //     }
+        //     }
+        // }
 
-        static void IRAM_ATTR readEncoder1ISR()
-        {
-            if (instance != nullptr) {
-            //     for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
-                    instance->rotaryEncoders[1].readEncoder_ISR();
-            //     }
-            }
-        }
+        // static void IRAM_ATTR readEncoder1ISR()
+        // {
+        //     if (instance != nullptr) {
+        //     //     for (uint8_t i = 0;i < Constants::NUMBER_OF_ROTARY_ENCODERS; i++) {
+        //             instance->rotaryEncoders[1].readEncoder_ISR();
+        //     //     }
+        //     }
+        // }
 
         static void inputManagerTask(void* pvParameters)
         {
@@ -203,11 +206,12 @@ class Input
 
                     portEXIT_CRITICAL(&input->mux);
 
-                    if (input->currentMode) {
-                        input->currentMode->handleEvent(e);
+                    // if (input->currentMode) {
+                        // input->currentMode->handleEvent(e);
+                        input->inputEngine.handleEvent(e);
 
                         instance->updateDisplay();
-                    }
+                    // }
                 }
 
                 vTaskDelay(pdMS_TO_TICKS(10));
@@ -275,28 +279,33 @@ class Input
             }
         }
 
-        int8_t controlToEncoder(ControlId encoder)
-        {
-            switch (encoder)
-            {
-                case ControlId::Encoder0: return 0;
-                case ControlId::Encoder1: return 1;
-                default: return -1;
-            }
-        }
+        // int8_t controlToEncoder(ControlId encoder)
+        // {
+        //     switch (encoder)
+        //     {
+        //         case ControlId::Encoder0: return 0;
+        //         case ControlId::Encoder1: return 1;
+        //         default: return -1;
+        //     }
+        // }
 
         static void inputTask(void* pvParameters)
         {
             Input* input = static_cast<Input*>(pvParameters);
             for (;;) {
                 for (uint8_t i = 0;i<Constants::NUMBER_OF_ROTARY_ENCODERS;i++) {
-                    // input->rotaryEncoderButtons[i].update();
-                    if (input->rotaryEncoders[i].encoderChanged()) {
+                    // Serial.println("Input : encoder loop");
+                    // Serial.println(input->rotaryEncoders.rotaryEncoders[i].readEncoder());
+                    // Serial.println(input->rotaryEncoders.rotaryEncoders[i].encoderChanged());
+                    if (input->rotaryEncoders.rotaryEncoders[i].encoderChanged()) {
+                        // Serial.println("Input : encoder changed");
                         InputEvent e;
                         e.id = i;
                         e.control = input->encoderToControl(i);
                         e.type = InputEventType::EncoderTurned;
-                        e.value = input->rotaryEncoders[i].readEncoder();
+                        e.value = input->rotaryEncoders.rotaryEncoders[i].readEncoder();
+                        Serial.println("InputEvent value");
+                        Serial.println(e.value);
                         instance->pushEvent(e);
                     }
                 }
@@ -352,12 +361,14 @@ class Input
         SequencerTimer& sequencerTimer;
         // Display& display;
         static Input* instance;
-        AiEsp32RotaryEncoder rotaryEncoders[Constants::NUMBER_OF_ROTARY_ENCODERS];
+        // AiEsp32RotaryEncoder rotaryEncoders[Constants::NUMBER_OF_ROTARY_ENCODERS];
         // Bounce2::Button rotaryEncoderButtons[Constants::NUMBER_OF_ROTARY_ENCODERS];
 
-        InputMode* currentMode = nullptr;
+        // InputMode* currentMode = nullptr;
 
-        InputMode* modes[4] = {};
+        // InputMode* modes[4] = {};
+
+        InputEngine& inputEngine;
 
         portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;     
         

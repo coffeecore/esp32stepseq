@@ -11,37 +11,37 @@
 
 #### Global
 
-| Function | Keys | Implemented | Comment | 
+| Function | Keys | Layer | Comment | 
 | -------- | ---- | ------- | ----------- |
-| Play/Pause | Fn0 | :heavy_check_mark: |
-| Stop | Hold Fn0 | :heavy_check_mark: |
-| Volume | RE0 | :heavy_check_mark: |
-| BPM | RE1 | :heavy_check_mark: |
-| Navigate step | Fn1 + RE1 | :heavy_check_mark: | |
-| Navigate track | Fn1 + RE0 | :heavy_check_mark: | |
-| Navigate quarter note | Fn1 + Fn2 + RE1 | | check encoder value |
+| Play/Pause | Fn0 | GlobalLayer |
+| Stop | Hold Fn0 | GlobalLayer |
+| Volume | RE0 | GlobalLayer |
+| BPM | RE1 | GlobalLayer |
+| Navigate step | Fn1 + RE1 | NavigationLayer | |
+| Navigate track | Fn1 + RE0 | NavigationLayer | |
+| Navigate quarter note | Fn1 + Fn2 + RE1 | | |
 | Select bank | Fn1 + Fn2 + RE1 | |
-| Global instrument | Fn3 + RE1 | :heavy_check_mark: |
+| Global instrument | Fn3 + RE1 | GlobalInstrumentLayer |
 
 #### Track
 
-| Function | Keys | Implemented | Comment | 
+| Function | Keys | Layer | Comment | 
 | -------- | ---- | ------- | ----------- |
-| Track volume | Fn2 + RE0 | :heavy_check_mark: |
-| Track transpose | Fn2 + RE1 | :heavy_check_mark: |
-| Track instrument | Fn3 + RE0 | :heavy_check_mark: |
-| Mute track | Hold Fn2 | |
+| Track volume | Fn2 + RE0 | |
+| Track transpose | Fn2 + RE1 | |
+| Track instrument | Fn3 + RE0 | GlobalInstrumentLayer |
+| Mute track | Hold Fn2 | GlobalLayer |
 
 #### Quater note (pattern)
 
-| Function | Keys | Implemented | Comment | 
+| Function | Keys | Layer | Comment | 
 | -------- | ---- | ------- | ----------- |
-| Step state | Syx | :heavy_check_mark: |
-| Step note | Syx + RE0 | :heavy_check_mark: | |
-| Step octave | Syx + RE1 | :heavy_check_mark: | |
-| Step length | Syx + Fn2 + RE0 | :heavy_check_mark: | |
-| Step instrument | Syx + Fn3 + RE1 | :heavy_check_mark: | |
-| Quarter note length | Syx + Fn1 | :heavy_check_mark: |
-| Add quarter note | Fn1 | :heavy_check_mark: |
-| Delete last quarter note | Hold Fn1 | :heavy_check_mark: |
+| Step state | Syx | StepEditLayer |
+| Step note | Syx + RE0 | StepEditLayer | |
+| Step octave | Syx + RE1 | StepEditLayer | |
+| Step length | Syx + Fn2 + RE0 | StepLengthLayer | |
+| Step instrument | Syx + Fn3 + RE1 | StepInstrumentLayer | |
+| Quarter note length | Syx + Fn1 | QuarterNoteLengthLayer |
+| Add quarter note | Fn1 | GlobalLayer |
+| Delete last quarter note | Hold Fn1 | GlobalLayer + ModalLayer |
 | Select step | Hold Syx | |

@@ -8,15 +8,19 @@
 #include "AiEsp32RotaryEncoder.h"
 
 #include "Input/Input.h"
-#include "Input/Mode/MainInputMode.h"
-#include "Input/Mode/StepInputMode.h"
-#include "Input/Mode/QuarterNoteInputMode.h"
+// #include "Input/Mode/MainInputMode.h"
+// #include "Input/Mode/StepInputMode.h"
+// #include "Input/Mode/QuarterNoteInputMode.h"
 
 
 #include "Display/Display.h"
 #include "Display/Mode/MainDisplayMode.h"
 #include "Display/Mode/StepDisplayMode.h"
 #include "Display/Mode/QuarterNoteDisplayMode.h"
+
+#include "Input/InputEngine.h"
+
+#include "Input/RotaryEncoder.h"
 
 constexpr uint8_t SCREEN_WIDTH = 128;
 constexpr uint8_t  SCREEN_HEIGHT = 64;
@@ -29,12 +33,16 @@ SequencerTimer sequencerTimer(hTimer);
 
 Display display(sequencerTimer, u8g2);
 
-Input input(sequencerTimer);
+RotaryEncoder rotaryEncoders;
+
+InputEngine inputEngine(sequencerTimer, display, rotaryEncoders);
+
+Input input(sequencerTimer, inputEngine, rotaryEncoders);
 
 
-MainInputMode mainInputMode(input, sequencerTimer, display);
-StepInputMode stepInputMode(input, sequencerTimer, display);
-QuarterNoteInputMode quarterNoteInputMode(input, sequencerTimer, display);
+// MainInputMode mainInputMode(input, sequencerTimer, display);
+// StepInputMode stepInputMode(input, sequencerTimer, display);
+// QuarterNoteInputMode quarterNoteInputMode(input, sequencerTimer, display);
 
 MainDisplayMode mainDisplayMode(display, sequencerTimer);
 StepDisplayMode stepDisplayMode(display, sequencerTimer);
@@ -125,9 +133,11 @@ void setup() {
         display.getTaskHandle()
     );
 
-    input.registerMode(InputModes::Main, &mainInputMode);
-    input.registerMode(InputModes::Step, &stepInputMode);
-    input.registerMode(InputModes::QuarterNote, &quarterNoteInputMode);
+    // input.registerMode(InputModes::Main, &mainInputMode);
+    // input.registerMode(InputModes::Step, &stepInputMode);
+    // input.registerMode(InputModes::QuarterNote, &quarterNoteInputMode);
+    rotaryEncoders.begin();
+    inputEngine.begin();
 
     input.begin();
     // input.setMode(InputModes::Main);
