@@ -3,15 +3,6 @@
 #include "InputEvent.h"
 class Input;
 
-
-enum class InputModes
-{
-    None,
-    Main,
-    Step,
-    QuarterNote
-};
-
 using FnMask = uint8_t;
 
 enum class ModalState

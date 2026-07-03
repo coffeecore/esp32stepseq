@@ -13,9 +13,9 @@ public:
         uint8_t row = (static_cast<uint8_t>(inputContext.stepId)) / 4;
         uint8_t col = (static_cast<uint8_t>(inputContext.stepId)) % 4;
 
-        Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+        Step& step = sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
 
-        rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 1, sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].ticksByStep, false);
+        rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 1, sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].ticksByStep, false);
     }
 
     void applyEncoderValues() override
@@ -23,7 +23,7 @@ public:
         uint8_t row = (static_cast<uint8_t>(inputContext.stepId)) / 4;
         uint8_t col = (static_cast<uint8_t>(inputContext.stepId)) % 4;
 
-        Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+        Step& step = sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
 
         rotaryEncoders.setEncoderValue(ControlId::Encoder0, step.length);     }
 
@@ -33,9 +33,9 @@ public:
             uint8_t row = (static_cast<uint8_t>(inputContext.stepId)) / 4;
             uint8_t col = (static_cast<uint8_t>(inputContext.stepId)) % 4;
 
-            Step& step = sequencerTimer.tracks[display.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
+            Step& step = sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[sequencerTimer.selectedQuarterNote].steps[col];
 
-            sequencerTimer.setStepLength(display.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, inputEvent.value);
+            sequencerTimer.setStepLength(uiState.displayedTrack + row, sequencerTimer.selectedQuarterNote, col, inputEvent.value);
         }
     }
 };

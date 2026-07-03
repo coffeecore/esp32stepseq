@@ -6,7 +6,7 @@
 #include "SequencerTimer.h"
 #include <Keypad.h>
 #include "InputEvent.h"
-#include "Display/Display.h"
+// #include "Display/Display.h"
 #include "RotaryEncoder.h"
 #include "Input/InputEngine.h"
 
@@ -34,10 +34,10 @@ class Input
         {
         }
 
-        void attachDisplayTask(TaskHandle_t handle)
-        {
-            displayTaskHandle = handle;
-        }
+        // void attachDisplayTask(TaskHandle_t handle)
+        // {
+        //     displayTaskHandle = handle;
+        // }
 
         // void registerMode(InputModes mode, InputMode* instance)
         // {
@@ -210,7 +210,6 @@ class Input
                         // input->currentMode->handleEvent(e);
                         input->inputEngine.handleEvent(e);
 
-                        instance->updateDisplay();
                     // }
                 }
 
@@ -372,13 +371,6 @@ class Input
 
         portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;     
         
-        TaskHandle_t displayTaskHandle = nullptr;
-
-        void updateDisplay()
-        {
-            if (displayTaskHandle != nullptr) {
-                xTaskNotifyGive(displayTaskHandle);
-            }
-        }
+        // TaskHandle_t displayTaskHandle = nullptr;
 };
 Input* Input::instance = nullptr;

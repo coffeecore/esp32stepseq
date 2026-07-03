@@ -4,8 +4,9 @@
 #include "Constants.h"
 #include "SequencerTimer.h"
 #include <U8g2lib.h>
+#include "Display/DisplayEngine.h"
 // #include "InputMode.h"
-#include "DisplayMode.h"
+// #include "DisplayMode.h"
 
 struct ConfirmDialog
 {
@@ -16,10 +17,7 @@ struct ConfirmDialog
 class Display
 {
     private:
-        TaskHandle_t xHandle = nullptr;
         SequencerTimer& sequencerTimer;
-        DisplayMode* modes[4] = {};
-        DisplayMode* currentMode = nullptr;
 
     public:
         U8G2& u8g2;
@@ -65,12 +63,12 @@ class Display
             return xHandle;
         }
 
-        void setMode(DisplayModes mode)
-        {
-            currentMode = modes[static_cast<uint8_t>(mode)];
+        // void setMode(DisplayModes mode)
+        // {
+        //     currentMode = modes[static_cast<uint8_t>(mode)];
 
-            updateDisplay();
-        }
+        //     updateDisplay();
+        // }
 
         void updateDisplay()
         {
@@ -79,10 +77,10 @@ class Display
             }
         }
 
-        void registerMode(DisplayModes mode, DisplayMode* instance)
-        {
-            modes[static_cast<uint8_t>(mode)] = instance;
-        }
+        // void registerMode(DisplayModes mode, DisplayMode* instance)
+        // {
+        //     modes[static_cast<uint8_t>(mode)] = instance;
+        // }
 
         void begin()
         {
@@ -98,7 +96,7 @@ class Display
             );
 
             u8g2.setFont(u8g2_font_5x8_tf);
-            setMode(DisplayModes::Main);
+            // setMode(DisplayModes::Main);
         }
 
         static void controlTask(void* pvParameters)
@@ -116,10 +114,10 @@ class Display
                     //     portMAX_DELAY
                     // );
 
-                    if (display->currentMode) {
+                    // if (display->currentMode) {
                         display->clear();
-                        display->currentMode->handleEvent();
-                        display->draw();
+                        display->displayEngine.handleEvent();
+                        // display->draw();
                     }
                 }
             }

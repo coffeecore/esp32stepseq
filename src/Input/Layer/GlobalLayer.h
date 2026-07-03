@@ -43,6 +43,7 @@ public:
                 break;
 
             case ControlId::Fn1:
+                Serial.println("Add quarterNote");
                 sequencerTimer.addQuarterNote();
 
                 break;
@@ -61,8 +62,8 @@ public:
             case ControlId::Fn1:
                 inputContext.confirmAction = ConfirmAction::DeleteQuarterNote;
                 inputContext.modal = ModalState::Confirm;
-
-                display.showConfirm("Delete quarter note ?");
+                uiState.confirm.text = "Delete quarter note ?";
+                uiState.confirm.active = true;
 
                 break;
 

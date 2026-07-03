@@ -23,17 +23,15 @@ class ModalLayer : public Layer
 
                     inputContext.modal = ModalState::None;
                     inputContext.confirmAction = ConfirmAction::None;
-
-                    display.hideConfirm();
-                    display.updateDisplay();
+                    uiState.confirm.active = false;
+                    
 
                     break;
 
                 case ControlId::Fn1:
                     inputContext.modal = ModalState::None;
                     inputContext.confirmAction = ConfirmAction::None;
-                    display.hideConfirm();
-                    display.updateDisplay();
+                    uiState.confirm.active = false;
 
                     break;
 

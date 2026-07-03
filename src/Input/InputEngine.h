@@ -10,11 +10,14 @@
 #include "Layer/StepLengthLayer.h"
 #include "Layer/GlobalInstrumentLayer.h"
 #include "Input/InputMode.h"
+#include "Display/Workspace.h"
 
 class InputEngine
 {
     public:
         InputContext ctx;
+
+        UIState& ui;
 
         GlobalLayer global;
         StepEditLayer stepEdit;
@@ -27,23 +30,24 @@ class InputEngine
 
         Layer* currentLayer = &global;
 
+        Layer* pressedLayer[8] = {&global, &global, &global, &global, &global, &global, &global, &global};
+
         SequencerTimer& sequencerTimer;
-        Display& display;
         RotaryEncoder& rotaryEncoders;
 
-        explicit InputEngine(SequencerTimer& _sequencerTimer, Display& _display, RotaryEncoder& _rotaryEncoders)
+        explicit InputEngine(SequencerTimer& _sequencerTimer, RotaryEncoder& _rotaryEncoders, UIState& _ui)
             :
+            ui(_ui),
             sequencerTimer(_sequencerTimer),
-            display(_display),
             rotaryEncoders(_rotaryEncoders),
-            global(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            stepEdit(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            stepLength(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            stepInstrument(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            quarterNoteLength(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            navigation(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            modal(ctx, _rotaryEncoders, _sequencerTimer, _display),
-            globalInstrument(ctx, _rotaryEncoders, _sequencerTimer, _display)
+            global(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            stepEdit(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            stepLength(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            stepInstrument(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            quarterNoteLength(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            navigation(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            modal(ctx, _rotaryEncoders, _sequencerTimer, _ui),
+            globalInstrument(ctx, _rotaryEncoders, _sequencerTimer, _ui)
         {
         }
 
@@ -52,6 +56,7 @@ class InputEngine
             resolveLayer();
             currentLayer->applyEncoderMapping();
             currentLayer->applyEncoderValues();
+                    ui.requestRedraw();
         }
 
         void resolveLayer()
@@ -108,7 +113,6 @@ class InputEngine
 
     void handleEvent(const InputEvent& event)
     {
-        Serial.println("InputEngine : handleEvent");
         updateContext(event);
 
         int8_t fn = fnIndex(event.control);
@@ -116,6 +120,9 @@ class InputEngine
         switch (event.type)
         {
             case InputEventType::ButtonPressed:
+                if (fn >= 0) {
+                    pressedLayer[fn] = currentLayer;
+                }
 
                 if (isStep(event.control))
                 {
@@ -134,9 +141,11 @@ class InputEngine
             case InputEventType::ButtonHold:
                 if (fn >= 0)
                 {
-                    currentLayer->onButtonHold(event);
+                    if (!ctx.fnState[fn].consumed) {
+                        pressedLayer[fn]->onButtonHold(event);
 
-                    ctx.fnState[fn].holdTriggered= true;
+                        ctx.fnState[fn].holdTriggered= true;
+                    }
                 }
 
                 break;
@@ -156,11 +165,12 @@ class InputEngine
                     if (!ctx.fnState[fn].usedAsModifier &&
                         !ctx.fnState[fn].holdTriggered)
                     {
-                        currentLayer->onButtonTap(event);
+                        pressedLayer[fn]->onButtonTap(event);
                     }
 
                     ctx.fnState[fn].usedAsModifier = false;
                     ctx.fnState[fn].holdTriggered = false;
+                    ctx.fnState[fn].consumed = false;
                 }
 
                 break;
@@ -174,8 +184,16 @@ class InputEngine
                         ctx.fnState[i].usedAsModifier = true;
                 }
 
-                if (ctx.stepHeld)
+                if (ctx.stepHeld) {
                     ctx.stepUsedAsModifier = true;
+                }
+
+                for (uint8_t i = 0; i < 8; i++)
+                {
+                    if (ctx.fnMask & (1 << i)) {
+                        ctx.fnState[i].consumed = true;
+                    }
+                }
 
                 currentLayer->onEncoder(event);
                 break;
@@ -185,6 +203,8 @@ class InputEngine
 
         currentLayer->applyEncoderMapping();
         currentLayer->applyEncoderValues();
+
+        ui.requestRedraw();
     }
 
     void updateContext(const InputEvent& event)

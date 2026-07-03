@@ -13,14 +13,17 @@
 // #include "Input/Mode/QuarterNoteInputMode.h"
 
 
-#include "Display/Display.h"
-#include "Display/Mode/MainDisplayMode.h"
-#include "Display/Mode/StepDisplayMode.h"
-#include "Display/Mode/QuarterNoteDisplayMode.h"
+// #include "Display/Display.h"
+#include "Display/DisplayEngine.h"
+// #include "Display/Mode/MainDisplayMode.h"
+// #include "Display/Mode/StepDisplayMode.h"
+// #include "Display/Mode/QuarterNoteDisplayMode.h"
 
 #include "Input/InputEngine.h"
 
 #include "Input/RotaryEncoder.h"
+
+#include "Display/Workspace.h"
 
 constexpr uint8_t SCREEN_WIDTH = 128;
 constexpr uint8_t  SCREEN_HEIGHT = 64;
@@ -29,13 +32,19 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* 
 
 HTimer hTimer;
 
+UIState uiState;
+
 SequencerTimer sequencerTimer(hTimer);
 
-Display display(sequencerTimer, u8g2);
+// Display display(sequencerTimer, u8g2);
 
 RotaryEncoder rotaryEncoders;
 
-InputEngine inputEngine(sequencerTimer, display, rotaryEncoders);
+DisplayEngine displayEngine(u8g2, uiState, sequencerTimer);
+
+
+InputEngine inputEngine(sequencerTimer, rotaryEncoders, uiState);
+
 
 Input input(sequencerTimer, inputEngine, rotaryEncoders);
 
@@ -44,9 +53,9 @@ Input input(sequencerTimer, inputEngine, rotaryEncoders);
 // StepInputMode stepInputMode(input, sequencerTimer, display);
 // QuarterNoteInputMode quarterNoteInputMode(input, sequencerTimer, display);
 
-MainDisplayMode mainDisplayMode(display, sequencerTimer);
-StepDisplayMode stepDisplayMode(display, sequencerTimer);
-QuarterNoteDisplayMode quarterNoteDisplayMode(display, sequencerTimer);
+// MainDisplayMode mainDisplayMode(display, sequencerTimer);
+// StepDisplayMode stepDisplayMode(display, sequencerTimer);
+// QuarterNoteDisplayMode quarterNoteDisplayMode(display, sequencerTimer);
 
 void setup() {
 
@@ -123,15 +132,15 @@ void setup() {
     // sequencerTimer.toggleStep(4, 0, 2);
     // sequencerTimer.toggleStep(4, 0, 4);
 
-    display.registerMode(DisplayModes::Main, &mainDisplayMode);
-    display.registerMode(DisplayModes::Step, &stepDisplayMode);
-    display.registerMode(DisplayModes::QuarterNote, &quarterNoteDisplayMode);
+    // display.registerMode(DisplayModes::Main, &mainDisplayMode);
+    // display.registerMode(DisplayModes::Step, &stepDisplayMode);
+    // display.registerMode(DisplayModes::QuarterNote, &quarterNoteDisplayMode);
 
-    display.begin();
+    displayEngine.begin();
 
-    input.attachDisplayTask(
-        display.getTaskHandle()
-    );
+    // input.attachDisplayTask(
+    //     displayEngine.getTaskHandle()
+    // );
 
     // input.registerMode(InputModes::Main, &mainInputMode);
     // input.registerMode(InputModes::Step, &stepInputMode);

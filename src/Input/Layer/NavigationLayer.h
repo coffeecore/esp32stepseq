@@ -41,12 +41,12 @@ public:
         if (inputEvent.control == ControlId::Encoder0) {
             sequencerTimer.setSelectedTrack(inputEvent.value);
 
-            if (inputEvent.value >= (display.displayedTrack+2)) {
-                display.displayedTrack = inputEvent.value-1;
+            if (inputEvent.value >= (uiState.displayedTrack+2)) {
+                uiState.displayedTrack = inputEvent.value-1;
             }
 
-            if (inputEvent.value <= display.displayedTrack) {
-                display.displayedTrack = inputEvent.value;
+            if (inputEvent.value <= uiState.displayedTrack) {
+                uiState.displayedTrack = inputEvent.value;
             }
 
             if (sequencerTimer.selectedStep >= sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount) {
@@ -57,10 +57,18 @@ public:
 
         if (inputEvent.control == ControlId::Encoder1) {
             if (inputEvent.value < 0) {
-                sequencerTimer.setSelectedQuarterNote(sequencerTimer.selectedQuarterNote-1);
+                if (sequencerTimer.selectedQuarterNote-1 < sequencerTimer.quarterNoteCounts) {
+                    sequencerTimer.setSelectedQuarterNote(sequencerTimer.quarterNoteCounts-1);
+                } else {
+                    sequencerTimer.setSelectedQuarterNote(sequencerTimer.selectedQuarterNote-1);
+                }
                 sequencerTimer.setSelectedStep(sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount-1);
             } else if (inputEvent.value >= sequencerTimer.tracks[sequencerTimer.selectedTrack].quarterNotes[sequencerTimer.selectedQuarterNote].stepsCount) {
-                sequencerTimer.setSelectedQuarterNote(sequencerTimer.selectedQuarterNote+1);
+                 if (sequencerTimer.selectedQuarterNote+1 >= sequencerTimer.quarterNoteCounts) {
+                    sequencerTimer.setSelectedQuarterNote(0);
+                 } else {
+                    sequencerTimer.setSelectedQuarterNote(sequencerTimer.selectedQuarterNote+1);
+                 }
                 sequencerTimer.setSelectedStep(0);
             } else {
                 sequencerTimer.setSelectedStep(inputEvent.value);

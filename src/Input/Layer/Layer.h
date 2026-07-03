@@ -2,8 +2,9 @@
 
 #include "Input/InputMode.h"
 #include "SequencerTimer.h"
-#include "Display/Display.h"
+// #include "Display/Display.h"
 #include "Input/RotaryEncoder.h"
+#include "Display/Workspace.h"
 
 enum class LayerId : uint8_t
 {
@@ -18,6 +19,7 @@ enum class LayerId : uint8_t
 typedef struct {
     bool usedAsModifier = false;
     bool holdTriggered = false;
+    bool consumed = false;
 } FnState;
 
 enum class ConfirmAction
@@ -50,13 +52,13 @@ class Layer
         InputContext& inputContext;
         RotaryEncoder& rotaryEncoders;
         SequencerTimer& sequencerTimer;
-        Display& display;
+        UIState& uiState;
 
-        explicit Layer(InputContext& _inputContext, RotaryEncoder& _rotaryEncoders, SequencerTimer& _sequencerTimer, Display& _display)
+        explicit Layer(InputContext& _inputContext, RotaryEncoder& _rotaryEncoders, SequencerTimer& _sequencerTimer, UIState& ui)
             : inputContext(_inputContext),
             rotaryEncoders(_rotaryEncoders),
             sequencerTimer(_sequencerTimer),
-            display(_display)
+            uiState(ui)
         {
         }
 
