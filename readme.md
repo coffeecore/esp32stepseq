@@ -45,3 +45,33 @@
 | Add quarter note | Fn1 | GlobalLayer |
 | Delete last quarter note | Hold Fn1 | GlobalLayer + ModalLayer |
 | Select step | Hold Syx | |
+
+## Wiring
+
+| Fonction              |                     GPIO |
+| --------------------- | -----------------------: |
+| **OLED SDA**          |                       21 |
+| **OLED SCL**          |                       22 |
+| **SD SCK**            |                       18 |
+| **SD MISO**           |                       19 |
+| **SD MOSI**           |                       23 |
+| **SD CS**             |                        5 |
+| **PCM5102 BCLK**      |                       26 |
+| **PCM5102 LRCK (WS)** |                       25 |
+| **PCM5102 DIN**       |                       27 |
+| **Encodeur 1 A**      |                       32 |
+| **Encodeur 1 B**      |                       33 |
+| **Encodeur 2 A**      | 34 *(entrée uniquement)* |
+| **Encodeur 2 B**      | 35 *(entrée uniquement)* |
+| **Matrice Ligne 0**   |                        4 |
+| **Matrice Ligne 1**   |                       13 |
+| **Matrice Ligne 2**   |                       14 |
+| **Matrice Ligne 3**   |                       16 |
+| **Matrice Colonne 0** |                       17 |
+| **Matrice Colonne 1** |                        0 |
+| **Matrice Colonne 2** |                        2 |
+| **Matrice Colonne 3** |                       15 |
+
+## Todo
+
+- Remove buttons wokwi
