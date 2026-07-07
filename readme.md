@@ -1,13 +1,13 @@
 ## Controls
 
+### Main screen
+
 || Col 0 | Col 1 | Col 2 | Col 3 |
 | --- | --- | --- | --- | --- |
 | **Row 0** | Fn0 | Fn1 | Fn2 / RE0 | Fn3 / RE1 |
 | **Row 1** | Fn4 | Fn5 | Fn6 | Fn7 |
 | **Row 2** | S01 | S01 | S02 | S03 |
 | **Row 3** | S10 | S11 | S12 | S13 |
-
-### Main screen
 
 #### Global
 
