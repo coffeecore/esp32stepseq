@@ -58,5 +58,6 @@ class RotaryEncoder
                 default: return -1;
             }
         }
+
 };
 RotaryEncoder* RotaryEncoder::instance = nullptr;

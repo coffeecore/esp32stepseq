@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Layer.h"
+#include "Input/Layer/Layer.h"
 #include "Input/InputMode.h"
 
 class ModalLayer : public Layer
@@ -16,7 +16,7 @@ class ModalLayer : public Layer
                     switch (inputContext.confirmAction)
                     {
                         case ConfirmAction::DeleteQuarterNote:
-                            sequencerTimer.removeQuarterNote();
+                            layerContext.sequencerTimer.removeQuarterNote();
 
                             break;
                     }

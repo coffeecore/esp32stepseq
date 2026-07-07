@@ -25,11 +25,6 @@ enum class ControlId: int8_t
     Step9,
     Step10,
     Step11,
-    Step12,
-    Step13,
-    Step14,
-    Step15,
-
 
     Fn0,
     Fn1,
@@ -39,6 +34,10 @@ enum class ControlId: int8_t
     Fn5,
     Fn6,
     Fn7,
+    Fn8,
+    Fn9,
+    Fn10,
+    Fn11,
 
     Encoder0,
     Encoder1,
@@ -57,4 +56,6 @@ typedef struct
     int16_t value;
 
     ControlId control;
+
+    int16_t delta;
 } InputEvent;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Layer.h"
+#include "Input/Layer/Layer.h"
 #include "Input/InputMode.h"
 
 class GlobalLayer : public Layer
@@ -10,26 +10,24 @@ public:
 
     void applyEncoderMapping() override
     {
-        rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
-        rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 1, 999, false);
+        layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
+        layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 1, 999, false);
     }
 
     void applyEncoderValues() override
     {
-        rotaryEncoders.setEncoderValue(ControlId::Encoder0, sequencerTimer.volume);
-        rotaryEncoders.setEncoderValue(ControlId::Encoder1, sequencerTimer.bpm);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencerTimer.volume);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencerTimer.bpm);
     }
 
-    void onEncoder(const InputEvent& inputEvent) override
+    void onEncoder(InputEvent& inputEvent) override
     {
         if (inputEvent.control == ControlId::Encoder0) {
-            /** @implements  set sequencer volume */
-            sequencerTimer.setVolume(inputEvent.value);
+            layerContext.sequencerTimer.setVolume(inputEvent.value);
         }
 
         if (inputEvent.control == ControlId::Encoder1) {
-            /** @implements  set sequencer bpm */
-            sequencerTimer.setBpm(inputEvent.value);
+            layerContext.sequencerTimer.setBpm(inputEvent.value);
         }
     }
 
@@ -38,13 +36,16 @@ public:
         switch (event.control)
         {
             case ControlId::Fn0:
-                sequencerTimer.togglePause();
+                layerContext.sequencerTimer.togglePause();
 
                 break;
 
             case ControlId::Fn1:
-                Serial.println("Add quarterNote");
-                sequencerTimer.addQuarterNote();
+                layerContext.sequencerTimer.addQuarterNote();
+
+                break;
+            case ControlId::Fn2:
+                layerContext.sequencerTimer.toggleTrackMute(uiState.selectedTrack);
 
                 break;
         }
@@ -55,7 +56,7 @@ public:
         switch (event.control)
         {
             case ControlId::Fn0:
-                sequencerTimer.toggleStop();
+                layerContext.sequencerTimer.toggleStop();
 
                 break;
 
@@ -68,7 +69,7 @@ public:
                 break;
 
             case ControlId::Fn2:
-                sequencerTimer.toggleTrackMute(sequencerTimer.selectedTrack);
+                uiState.autoScroll = !uiState.autoScroll;
 
                 break;
         }

@@ -5,7 +5,6 @@
 enum class Workspace
 {
     Sequencer
-    // Instrument
 };
 
 struct ConfirmDialog
@@ -24,9 +23,17 @@ struct UIState
 
     uint8_t displayedTrack = 0;
 
+    uint8_t selectedQuarterNote = 0;
+
+    uint8_t selectedStep = 0;
+
+    uint8_t selectedTrack = 0;
+
     ConfirmDialog confirm;
 
     TaskHandle_t displayTask = nullptr;
+
+    bool autoScroll = false;
 
     void requestRedraw()
     {

@@ -1,16 +1,11 @@
 #pragma once
 
 #include "Input/Layer/Layer.h"
-#include "Layer/GlobalLayer.h"
-#include "Layer/StepEditLayer.h"
-#include "Layer/ModalLayer.h"
-#include "Layer/NavigationLayer.h"
-#include "Layer/QuarterNoteLengthLayer.h"
-#include "Layer/StepInstrumentLayer.h"
-#include "Layer/StepLengthLayer.h"
-#include "Layer/GlobalInstrumentLayer.h"
+#include "Input/Layer/LayerGroup.h"
+#include "Input/Layer/MainLayerGroup.h"
 #include "Input/InputMode.h"
 #include "Display/Workspace.h"
+#include "Input/Layer/LayerContext.h"
 
 class InputEngine
 {
@@ -19,100 +14,66 @@ class InputEngine
 
         UIState& ui;
 
-        GlobalLayer global;
-        StepEditLayer stepEdit;
-        StepLengthLayer stepLength;
-        StepInstrumentLayer stepInstrument;
-        QuarterNoteLengthLayer quarterNoteLength;
-        NavigationLayer navigation;
-        ModalLayer modal;
-        GlobalInstrumentLayer globalInstrument;
-
-        Layer* currentLayer = &global;
-
-        Layer* pressedLayer[8] = {&global, &global, &global, &global, &global, &global, &global, &global};
+        LayerContext layerContext;
 
         SequencerTimer& sequencerTimer;
         RotaryEncoder& rotaryEncoders;
 
+        MainLayerGroup mainLayerGroup;
+
+        LayerGroup* currentLayerGroup = nullptr;
+
+        Layer* pressedLayer[Constants::NUMBER_OF_BUTTONS] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
+
         explicit InputEngine(SequencerTimer& _sequencerTimer, RotaryEncoder& _rotaryEncoders, UIState& _ui)
             :
             ui(_ui),
+            layerContext(_sequencerTimer, _rotaryEncoders),
             sequencerTimer(_sequencerTimer),
             rotaryEncoders(_rotaryEncoders),
-            global(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            stepEdit(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            stepLength(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            stepInstrument(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            quarterNoteLength(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            navigation(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            modal(ctx, _rotaryEncoders, _sequencerTimer, _ui),
-            globalInstrument(ctx, _rotaryEncoders, _sequencerTimer, _ui)
+            mainLayerGroup(ctx, layerContext, ui)
         {
         }
 
         void begin()
         {
             resolveLayer();
-            currentLayer->applyEncoderMapping();
-            currentLayer->applyEncoderValues();
-                    ui.requestRedraw();
+            currentLayerGroup->layer()->applyEncoderMapping();
+            currentLayerGroup->layer()->applyEncoderValues();
+            ui.requestRedraw();
         }
 
         void resolveLayer()
         {
-            if (ctx.modal != ModalState::None)
+            switch (ui.workspace)
             {
-                currentLayer = &modal;
-                return;
+                case Workspace::Sequencer:
+                    currentLayerGroup = &mainLayerGroup;
+
+                    break;
             }
-
-            if (ctx.stepHeld)
-            {
-                if (ctx.fnMask & FN1)
-                {
-                    currentLayer = &quarterNoteLength;
-
-                    return;
-                }
-                if (ctx.fnMask & FN2)
-                {
-                    currentLayer = &stepLength;
-
-                    return;
-                }
-
-                if (ctx.fnMask & FN3)
-                {
-                    currentLayer = &stepInstrument;
-
-                    return;
-                }
-
-                currentLayer = &stepEdit;
-
-                return;
-            }
-
-            if (ctx.fnMask & FN1)
-            {
-                currentLayer = &navigation;
-
-                return;
-            }
-
-            if (ctx.fnMask & FN3)
-            {
-                currentLayer = &globalInstrument;
-
-                return;
-            }
-
-            currentLayer = &global;
         }
 
-    void handleEvent(const InputEvent& event)
+    void handleEvent(InputEvent& event)
     {
+        switch (event.type)
+        {
+            case InputEventType::EncoderTurned:
+            {
+                event.control = currentLayerGroup->encoderToControl(event.id);
+                break;
+            }
+            case InputEventType::ButtonPressed:
+            case InputEventType::ButtonHold:
+            case InputEventType::ButtonReleased:
+            {
+                event.control = currentLayerGroup->buttonToControl(event.id);
+                break;
+            }
+        }
+
+        Layer* currentLayer = currentLayerGroup->layer();
+
         updateContext(event);
 
         int8_t fn = fnIndex(event.control);
@@ -120,6 +81,7 @@ class InputEngine
         switch (event.type)
         {
             case InputEventType::ButtonPressed:
+            {
                 if (fn >= 0) {
                     pressedLayer[fn] = currentLayer;
                 }
@@ -137,8 +99,10 @@ class InputEngine
                 }
 
                 break;
+            }
 
             case InputEventType::ButtonHold:
+            {
                 if (fn >= 0)
                 {
                     if (!ctx.fnState[fn].consumed) {
@@ -149,13 +113,15 @@ class InputEngine
                 }
 
                 break;
+            }
 
             case InputEventType::ButtonReleased:
-
+            {
                 if (isStep(event.control))
                 {
-                    if (!ctx.stepUsedAsModifier)
+                    if (!ctx.stepUsedAsModifier){
                         currentLayer->onStepReleased(event);
+                    }
 
                     ctx.stepUsedAsModifier = false;
                 }
@@ -174,8 +140,10 @@ class InputEngine
                 }
 
                 break;
+            }
 
             case InputEventType::EncoderTurned:
+            {
 
                 // Toutes les Fn appuyées servent de modificateur
                 for (uint8_t i = 0; i < 8; i++)
@@ -197,9 +165,11 @@ class InputEngine
 
                 currentLayer->onEncoder(event);
                 break;
+            }
         }
 
         resolveLayer();
+        currentLayer = currentLayerGroup->layer();
 
         currentLayer->applyEncoderMapping();
         currentLayer->applyEncoderValues();

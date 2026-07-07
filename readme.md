@@ -27,8 +27,8 @@
 
 | Function | Keys | Layer | Comment | 
 | -------- | ---- | ------- | ----------- |
-| Track volume | Fn2 + RE0 | |
-| Track transpose | Fn2 + RE1 | |
+| Track volume | Fn2 + RE0 | TrackLayer |
+| Track transpose | Fn2 + RE1 | TrackLayer |
 | Track instrument | Fn3 + RE0 | GlobalInstrumentLayer |
 | Mute track | Hold Fn2 | GlobalLayer |
 

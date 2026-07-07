@@ -20,7 +20,7 @@ constexpr bool isFn(ControlId c)
 constexpr bool isStep(ControlId c)
 {
     return c >= ControlId::Step0 &&
-           c <= ControlId::Step15;
+           c <= ControlId::Step11;
 }
 
 constexpr bool isEncoder(ControlId c)

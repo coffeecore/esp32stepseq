@@ -49,7 +49,7 @@ class DisplayEngine
         {
             resolveScreen();
 
-            u8g2.clear();
+            u8g2.clearBuffer();
 
             if (ui.confirm.active) {
                 drawConfirm();

@@ -5,13 +5,16 @@
 namespace Constants
 {
   constexpr uint8_t DEFAULT_PPQN = 24;
-  constexpr uint8_t NUMBER_OF_BUTTONS = 8;
-  constexpr uint8_t MAX_TRACKS = 10;
-  constexpr uint8_t MAX_PATTERNS = NUMBER_OF_BUTTONS;
-  constexpr uint8_t MAX_QUARTER_NOTE_BY_PATTERN = (NUMBER_OF_BUTTONS / 4);
-  constexpr uint8_t MAX_STEPS_BY_QUARTER_NOTE = 4;
-  constexpr uint8_t MAX_STEPS = (MAX_QUARTER_NOTE_BY_PATTERN * MAX_STEPS_BY_QUARTER_NOTE);
   constexpr uint16_t DEFAULT_BPM = 10;
+
+  constexpr uint8_t NUMBER_OF_TRACKS = 5;
+  constexpr uint8_t NUMBER_OF_QUARTER_NOTES = 64;
+  constexpr uint8_t NUMBER_OF_STEPS = 4;
+  constexpr uint8_t NUMBER_OF_INSTRUMENTS = 12;
+  constexpr uint8_t NUMBER_OF_DISPLAYED_TRACKS = 2;
+  constexpr uint8_t NUMBER_OF_DISPLAYED_QN = 1;
+constexpr uint8_t SCREEN_WIDTH = 128;
+constexpr uint8_t  SCREEN_HEIGHT = 64;
 
   /**
   | OLED | ESP32   |
@@ -54,39 +57,35 @@ namespace Constants
 
   constexpr uint8_t ROTARY_ENCODER_ONE_A = 32;
   constexpr uint8_t ROTARY_ENCODER_ONE_B = 33;
-  // constexpr uint8_t ROTARY_ENCODER_ONE_SW = 25;
 
   constexpr uint8_t ROTARY_ENCODER_TWO_A = 26;
   constexpr uint8_t ROTARY_ENCODER_TWO_B = 27;
-  // constexpr uint8_t ROTARY_ENCODER_TWO_SW = 14;
 
   constexpr uint8_t ROTARY_ENCODERS_PIN[NUMBER_OF_ROTARY_ENCODERS][3] = {
     {
       ROTARY_ENCODER_ONE_A,
       ROTARY_ENCODER_ONE_B
-      // ROTARY_ENCODER_ONE_SW
     },
     {
       ROTARY_ENCODER_TWO_A,
       ROTARY_ENCODER_TWO_B
-      // ROTARY_ENCODER_TWO_SW
     }
   };
 
-
-  constexpr byte ROWS = 6;
+  constexpr byte ROWS = 4;
   constexpr byte COLS = 4;
+
+  constexpr uint8_t NUMBER_OF_BUTTONS = ROWS * COLS;
+
   // Define the keymaps.  The blank spot (lower left) is the space character.
   char KEY_MATRIX[ROWS][COLS] = {
       { 'A', 'B', 'C', 'D' },
       { 'E', 'F', 'G', 'H' },
       { 'I', 'J', 'K', 'L' },
-      { 'M', 'N', 'O', 'P' },
-      { 'Q', 'R', 'S', 'T' },
-      { 'U', 'V', 'W', 'X' }
+      { 'M', 'N', 'O', 'P' }
   };
 
-  byte ROWS_PINS[ROWS] = {25, 19, 18, 5, 17, 16}; //connect to the row pinouts of the keypad
+  byte ROWS_PINS[ROWS] = {25, 19, 18, 5}; //connect to the row pinouts of the keypad
   byte COLS_PINS[COLS] = {4, 23, 13, 15};
 
   // constexpr uint8_t FN_BUTTON_PIN = 4;

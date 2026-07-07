@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Layer.h"
+#include "Input/Layer/Layer.h"
 #include "Input/InputMode.h"
 
 class QuarterNoteLengthLayer : public Layer
@@ -10,9 +10,9 @@ class QuarterNoteLengthLayer : public Layer
 
         void onStepReleased(const InputEvent& inputEvent) override
         {
-            /** @implements change quarter note length */
             uint8_t row = (static_cast<uint8_t>(inputEvent.control)) / 4;
             uint8_t col = (static_cast<uint8_t>(inputEvent.control)) % 4;
-            sequencerTimer.setQuarterNoteStepsCount(uiState.displayedTrack + row, sequencerTimer.selectedQuarterNote, col + 1);  
+
+            layerContext.sequencerTimer.setQuarterNoteStepsCount(uiState.displayedTrack + row, uiState.selectedQuarterNote, col + 1);  
         }
 };

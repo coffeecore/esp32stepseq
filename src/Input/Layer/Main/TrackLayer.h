@@ -1,0 +1,35 @@
+#pragma once
+
+#include "Input/Layer/Layer.h"
+#include "Input/InputMode.h"
+
+class TrackLayer : public Layer
+{
+public:
+    using Layer::Layer;
+
+    void applyEncoderMapping() override
+    {
+        layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
+        layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, -12, 12, false);
+    }
+
+    void applyEncoderValues() override
+    {
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencerTimer.tracks[uiState.selectedTrack].volume);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencerTimer.tracks[uiState.selectedTrack].transpose);
+    }
+
+    void onEncoder(InputEvent& inputEvent) override
+    {
+        if (inputEvent.control == ControlId::Encoder0) {
+            /** @implements  set sequencer volume */
+            layerContext.sequencerTimer.setTrackVolume(uiState.selectedTrack,inputEvent.value);
+        }
+
+        if (inputEvent.control == ControlId::Encoder1) {
+            /** @implements  set sequencer bpm */
+            layerContext.sequencerTimer.setTrackTranspose(uiState.selectedTrack, inputEvent.value);
+        }
+    }
+};
