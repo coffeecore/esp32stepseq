@@ -117,7 +117,8 @@ class Input
                         e.delta = delta;
                         e.type = InputEventType::EncoderTurned;
                         e.value = input->rotaryEncoders.rotaryEncoders[i].readEncoder();
-                        Serial.printf("RAW ENCODER = %ld\n", e.value);
+                        Serial.printf("delta=%d value=%ld\n", e.delta, e.value);
+                        // Serial.printf("RAW ENCODER = %ld\n", e.value);
                         instance->pushEvent(e);
                     }
                 }

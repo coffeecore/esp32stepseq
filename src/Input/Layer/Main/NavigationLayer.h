@@ -20,7 +20,7 @@ class NavigationLayer : public Layer
             QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
             uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
             if (0 < stepsCount-1) {
-                layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 0, stepsCount-1, false);
+                layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 0, 4, true);
             }
         }
         
@@ -58,13 +58,18 @@ class NavigationLayer : public Layer
             }
             
             if (inputEvent.control == ControlId::Encoder1) {
+                Serial.printf("DELTA %d\n", inputEvent.delta);
                 if (inputEvent.delta > 0) {
                     while (inputEvent.delta--) {
+                        Serial.printf("LESS BEFORE %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                         nextStep();
+                        Serial.printf("LESS AFTER %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                     }
                 } else if (inputEvent.delta < 0) {
                     while (inputEvent.delta++) {
+                        Serial.printf("MORE BEFORE %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                         previousStep();
+                        Serial.printf("MORE AFTER %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                     }
                 }
             }

@@ -18,7 +18,9 @@ class RotaryEncoder
                 rotaryEncoders[i] = AiEsp32RotaryEncoder(Constants::ROTARY_ENCODERS_PIN[i][0], Constants::ROTARY_ENCODERS_PIN[i][1], Constants::ROTARY_ENCODERS_PIN[i][2], -1, 4);
 
                 rotaryEncoders[i].begin();
-                rotaryEncoders[i].setAcceleration(0);
+                // rotaryEncoders[i].setAcceleration(0);
+                rotaryEncoders[i].disableAcceleration();
+
             }
 
             rotaryEncoders[0].setup(readEncoder0ISR);

@@ -90,7 +90,7 @@ public:
         u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 16) + u8g2.getMaxCharWidth(), y, buffer);
 
         // --- TRACKS QUARTER NOTES ---
-        if (sequencerTimer.trackCounts > (uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS)) {
+        if (sequencer.trackCounts > (uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS)) {
             u8g2.drawVLine(125, 30, 5);
             u8g2.drawVLine(126, 31, 3);
             u8g2.drawPixel(127, 32);
@@ -102,7 +102,7 @@ public:
             u8g2.drawPixel(121, 32);
         }
 
-        if (sequencerTimer.quarterNoteCounts > (uiState.selectedQuarterNote + 1)) {
+        if (sequencer.quarterNoteCounts > (uiState.selectedQuarterNote + 1)) {
             u8g2.drawHLine(122, 61, 5);
             u8g2.drawHLine(123, 62, 3);
             u8g2.drawPixel(124, 63);

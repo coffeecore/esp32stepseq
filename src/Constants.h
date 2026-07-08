@@ -85,8 +85,8 @@ constexpr uint8_t  SCREEN_HEIGHT = 64;
       { 'M', 'N', 'O', 'P' }
   };
 
-  byte ROWS_PINS[ROWS] = {25, 19, 18, 5}; //connect to the row pinouts of the keypad
-  byte COLS_PINS[COLS] = {4, 23, 13, 15};
+  byte ROWS_PINS[ROWS] = {4, 13, 14, 16}; //connect to the row pinouts of the keypad
+  byte COLS_PINS[COLS] = {17, 0, 2, 15};
 
   // constexpr uint8_t FN_BUTTON_PIN = 4;
 
