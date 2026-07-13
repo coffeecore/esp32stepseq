@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Input/InputMode.h"
-#include "SequencerTimer.h"
+#include "Sequencer/Sequencer.h"
 #include "Input/RotaryEncoder.h"
 #include "Display/Workspace.h"
 #include "Input/InputContext.h"

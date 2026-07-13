@@ -16,7 +16,7 @@ class ModalLayer : public Layer
                     switch (inputContext.confirmAction)
                     {
                         case ConfirmAction::DeleteQuarterNote:
-                            layerContext.sequencerTimer.removeQuarterNote();
+                            layerContext.sequencer.removeQuarterNote();
 
                             break;
                     }

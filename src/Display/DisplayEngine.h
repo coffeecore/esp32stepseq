@@ -3,7 +3,7 @@
 class Display;   // forward declaration OK
 
 class UIState;
-class SequencerTimer;
+class Sequencer;
 
 #include "Screen/Screen.h"
 #include "Screen/SequencerScreen.h"
@@ -13,7 +13,7 @@ class DisplayEngine
     public:
         U8G2& u8g2;
         UIState& ui;
-        SequencerTimer& sequencer;
+        Sequencer& sequencer;
 
         SequencerScreen sequencerScreen;
 
@@ -21,7 +21,7 @@ class DisplayEngine
 
         TaskHandle_t taskHandle = nullptr;
 
-        explicit DisplayEngine(U8G2& u8g2, UIState& uiState, SequencerTimer& seq)
+        explicit DisplayEngine(U8G2& u8g2, UIState& uiState, Sequencer& seq)
             : u8g2(u8g2),
             ui(uiState),
             sequencer(seq),

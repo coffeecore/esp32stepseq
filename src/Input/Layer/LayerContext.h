@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Input/InputMode.h"
-#include "SequencerTimer.h"
+#include "Sequencer/Sequencer.h"
 #include "Input/RotaryEncoder.h"
 #include "Display/Workspace.h"
 #include "Input/InputContext.h"
@@ -11,11 +11,11 @@ class LayerContext
 {
     public:
         RotaryEncoder& rotaryEncoders;
-        SequencerTimer& sequencerTimer;
+        Sequencer& sequencer;
 
-        LayerContext(SequencerTimer& seq, RotaryEncoder& enc)
+        LayerContext(Sequencer& seq, RotaryEncoder& enc)
             : rotaryEncoders(enc),
-            sequencerTimer(seq)
+            sequencer(seq)
         {
         }
 };

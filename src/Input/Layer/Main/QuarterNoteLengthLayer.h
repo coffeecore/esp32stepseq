@@ -13,6 +13,6 @@ class QuarterNoteLengthLayer : public Layer
             uint8_t row = (static_cast<uint8_t>(inputEvent.control)) / 4;
             uint8_t col = (static_cast<uint8_t>(inputEvent.control)) % 4;
 
-            layerContext.sequencerTimer.setQuarterNoteStepsCount(uiState.displayedTrack + row, uiState.selectedQuarterNote, col + 1);  
+            layerContext.sequencer.setQuarterNoteStepsCount(uiState.displayedTrack + row, uiState.selectedQuarterNote, col + 1);  
         }
 };

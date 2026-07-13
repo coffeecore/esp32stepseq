@@ -13,9 +13,9 @@ public:
         uint8_t row = (static_cast<uint8_t>(inputContext.stepId)) / 4;
         uint8_t col = (static_cast<uint8_t>(inputContext.stepId)) % 4;
 
-        Step& step = layerContext.sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
+        Step& step = layerContext.sequencer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
 
-        layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 1, layerContext.sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].ticksByStep, false);
+        layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 1, layerContext.sequencer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].ticksByStep, false);
     }
 
     void applyEncoderValues() override
@@ -23,7 +23,7 @@ public:
         uint8_t row = (static_cast<uint8_t>(inputContext.stepId)) / 4;
         uint8_t col = (static_cast<uint8_t>(inputContext.stepId)) % 4;
 
-        Step& step = layerContext.sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
+        Step& step = layerContext.sequencer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
 
         layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, step.length);     }
 
@@ -33,9 +33,9 @@ public:
             uint8_t row = (static_cast<uint8_t>(inputContext.stepId)) / 4;
             uint8_t col = (static_cast<uint8_t>(inputContext.stepId)) % 4;
 
-            Step& step = layerContext.sequencerTimer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
+            Step& step = layerContext.sequencer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
 
-            layerContext.sequencerTimer.setStepLength(uiState.displayedTrack + row, uiState.selectedQuarterNote, col, inputEvent.value);
+            layerContext.sequencer.setStepLength(uiState.displayedTrack + row, uiState.selectedQuarterNote, col, inputEvent.value);
         }
     }
 };

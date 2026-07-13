@@ -16,20 +16,20 @@ public:
 
     void applyEncoderValues() override
     {
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencerTimer.tracks[uiState.selectedTrack].volume);
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencerTimer.tracks[uiState.selectedTrack].transpose);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencer.tracks[uiState.selectedTrack].volume);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencer.tracks[uiState.selectedTrack].transpose);
     }
 
     void onEncoder(InputEvent& inputEvent) override
     {
         if (inputEvent.control == ControlId::Encoder0) {
-            layerContext.sequencerTimer.setTrackVolume(uiState.selectedTrack,inputEvent.value);
+            layerContext.sequencer.setTrackVolume(uiState.selectedTrack,inputEvent.value);
         }
 
         if (inputEvent.control == ControlId::Encoder1) {
             Serial.println("DEBUG TRANPOSE");
             Serial.println(inputEvent.value);
-            layerContext.sequencerTimer.setTrackTranspose(uiState.selectedTrack, inputEvent.value);
+            layerContext.sequencer.setTrackTranspose(uiState.selectedTrack, inputEvent.value);
         }
     }
 };

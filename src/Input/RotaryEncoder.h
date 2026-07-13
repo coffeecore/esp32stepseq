@@ -61,12 +61,12 @@ class RotaryEncoder
             minValue[idx] = minEncoderValue;
             maxValue[idx] = maxEncoderValue;
 
-            rotaryEncoders[idx].setBoundaries(minEncoderValue, maxEncoderValue, circleValues);
+            rotaryEncoders[idx]->setBoundaries(minEncoderValue, maxEncoderValue, circleValues);
         }
 
         void setEncoderValue(ControlId encoder, long newValue )
         {
-            rotaryEncoders[controlToEncoder(encoder)].setEncoderValue(newValue);
+            rotaryEncoders[controlToEncoder(encoder)]->setEncoderValue(newValue);
         }
 
         void setLastPosition(ControlId encoder, long _lastPosition )

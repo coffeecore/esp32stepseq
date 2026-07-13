@@ -10,7 +10,7 @@ public:
 
     void applyEncoderMapping() override
     {
-        Track& track = layerContext.sequencerTimer.tracks[uiState.selectedTrack];
+        Track& track = layerContext.sequencer.tracks[uiState.selectedTrack];
 
         layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, Constants::NUMBER_OF_INSTRUMENTS-1, false);
 
@@ -19,7 +19,7 @@ public:
 
     void applyEncoderValues() override
     {
-        Track& track = layerContext.sequencerTimer.tracks[uiState.selectedTrack];
+        Track& track = layerContext.sequencer.tracks[uiState.selectedTrack];
 
         layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, track.instrument);
 
@@ -29,7 +29,7 @@ public:
     void onEncoder(InputEvent& inputEvent) override
     {
         if (inputEvent.control == ControlId::Encoder0) {
-            layerContext.sequencerTimer.setTrackInstrument(uiState.selectedTrack, inputEvent.value);
+            layerContext.sequencer.setTrackInstrument(uiState.selectedTrack, inputEvent.value);
         }
 
         if (inputEvent.control == ControlId::Encoder1) {

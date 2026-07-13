@@ -16,7 +16,7 @@ enum class ConfirmAction
     ClearScreen
 };
 
-typedef struct
+struct InputContext
 {
     FnMask fnMask = 0;
 
@@ -30,4 +30,4 @@ typedef struct
     bool stepUsedAsModifier = false;
 
     ConfirmAction confirmAction = ConfirmAction::None;
-} InputContext;
+};

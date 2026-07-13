@@ -3,7 +3,7 @@
 #include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
 #include "Constants.h"
-#include "SequencerTimer.h"
+#include "Sequencer/Sequencer.h"
 #include <Keypad.h>
 #include "InputEvent.h"
 #include "RotaryEncoder.h"
@@ -18,8 +18,8 @@ class Input
         uint8_t readIndex = 0;
         RotaryEncoder& rotaryEncoders;
 
-        Input(SequencerTimer& _sequencerTimer, InputEngine& _inputEngine, RotaryEncoder& _rotaryEncoders):
-            sequencerTimer(_sequencerTimer),
+        Input(Sequencer& _sequencer, InputEngine& _inputEngine, RotaryEncoder& _rotaryEncoders):
+            sequencer(_sequencer),
             pad(
                 makeKeymap(Constants::KEY_MATRIX),
                 Constants::ROWS_PINS,
@@ -111,15 +111,15 @@ class Input
             Input* input = static_cast<Input*>(pvParameters);
             for (;;) {
                 for (uint8_t i = 0;i<Constants::NUMBER_OF_ROTARY_ENCODERS;i++) {
-                    if (0 != input->rotaryEncoders.rotaryEncoders[i].encoderChanged()) {
+                    if (0 != input->rotaryEncoders.rotaryEncoders[i]->encoderChanged()) {
                         InputEvent e;
                         e.id = i;
                         e.type = InputEventType::EncoderTurned;
-                        Serial.println("JJDDJJDJDJDJD");
-                        Serial.println(input->rotaryEncoders.rotaryEncoders[i].readEncoder());
-                        Serial.println(input->rotaryEncoders.minValue[i]);
-                        Serial.println(input->rotaryEncoders.maxValue[i]);
-                        e.value = input->rotaryEncoders.rotaryEncoders[i].readEncoder();
+                        // Serial.println("JJDDJJDJDJDJD");
+                        // Serial.println(input->rotaryEncoders.rotaryEncoders[i].readEncoder());
+                        // Serial.println(input->rotaryEncoders.minValue[i]);
+                        // Serial.println(input->rotaryEncoders.maxValue[i]);
+                        e.value = input->rotaryEncoders.rotaryEncoders[i]->readEncoder();
                         e.delta = input->rotaryEncoders.getDelta(input->rotaryEncoders.encoderToControl(i), e.value);
                         instance->pushEvent(e);
                     }
@@ -158,7 +158,7 @@ class Input
     private:
         TaskHandle_t xHandleInput = nullptr;
         TaskHandle_t xHandleInputManager = nullptr;
-        SequencerTimer& sequencerTimer;
+        Sequencer& sequencer;
         static Input* instance;
         InputEngine& inputEngine;
         portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;     

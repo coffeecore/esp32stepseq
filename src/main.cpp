@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <U8g2lib.h>
-#include "HTimer.h"
-#include "SequencerTimer.h"
+#include "Sequencer/Sequencer.h"
+#include "Sequencer/HTimer.h"
 #include "AiEsp32RotaryEncoder.h"
 #include "Input/Input.h"
 #include "Display/DisplayEngine.h"
@@ -29,15 +29,15 @@ UIState uiState;
 
 ESP32SynthAudioEngine esp32SynthAudioEngine(synth);
 
-SequencerTimer sequencerTimer(hTimer, uiState, esp32SynthAudioEngine);
+Sequencer sequencer(hTimer, uiState, esp32SynthAudioEngine);
 
 RotaryEncoder rotaryEncoders;
 
-DisplayEngine displayEngine(u8g2, uiState, sequencerTimer);
+DisplayEngine displayEngine(u8g2, uiState, sequencer);
 
-InputEngine inputEngine(sequencerTimer, rotaryEncoders, uiState);
+InputEngine inputEngine(sequencer, rotaryEncoders, uiState);
 
-Input input(sequencerTimer, inputEngine, rotaryEncoders);
+Input input(sequencer, inputEngine, rotaryEncoders);
 
 void setup_audio() {
     // Standard I2S Mode (External DAC like PCM5102A - BCK, WS, DATA)
@@ -79,19 +79,19 @@ void setup() {
     initNotes();
 
 
-    sequencerTimer.begin();
+    sequencer.begin();
 
     Serial.println("Add track and quarter notes");
 
-    sequencerTimer.addTrack();
-    sequencerTimer.addTrack();
-    sequencerTimer.addTrack();
-    sequencerTimer.addTrack();
-    sequencerTimer.addTrack();
+    sequencer.addTrack();
+    sequencer.addTrack();
+    sequencer.addTrack();
+    sequencer.addTrack();
+    sequencer.addTrack();
     
-    sequencerTimer.addQuarterNote();
-    sequencerTimer.addQuarterNote();
-    sequencerTimer.addQuarterNote();
+    sequencer.addQuarterNote();
+    sequencer.addQuarterNote();
+    sequencer.addQuarterNote();
 
     displayEngine.begin();
 

@@ -75,3 +75,12 @@
 ## Todo
 
 - Remove buttons wokwi
+- Organize Input folder
+```
+Input/
+    ControlId.h        // enum ControlId
+    InputEvent.h       // InputEvent + InputEventType
+    InputHelpers.h     // isFn(), fnBit(), isStep()...
+    InputContext.h     // InputContext + FnState
+    ModalState.h       // ModalState
+```

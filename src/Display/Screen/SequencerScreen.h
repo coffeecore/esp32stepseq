@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Display/Workspace.h"
-#include "SequencerTimer.h"
+#include "Sequencer/Sequencer.h"
 #include "Display/Screen/Screen.h"
 #include "Audio/Notes.h"
 

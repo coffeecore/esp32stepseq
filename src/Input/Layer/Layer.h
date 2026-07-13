@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Input/InputMode.h"
-#include "SequencerTimer.h"
+#include "Sequencer/Sequencer.h"
 #include "Input/RotaryEncoder.h"
 #include "Input/InputContext.h"
 #include "Display/Workspace.h"
@@ -31,4 +31,7 @@ class Layer
 
         virtual void onButtonTap(const InputEvent& event) {}
         virtual void onButtonHold(const InputEvent& event) {}
+
+        virtual void onEnter(Layer* previous) {}
+        virtual void onExit(Layer* next) {}
 };

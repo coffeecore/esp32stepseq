@@ -16,18 +16,18 @@ public:
 
     void applyEncoderValues() override
     {
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencerTimer.volume);
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencerTimer.bpm);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencer.volume);
+        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencer.bpm);
     }
 
     void onEncoder(InputEvent& inputEvent) override
     {
         if (inputEvent.control == ControlId::Encoder0) {
-            layerContext.sequencerTimer.setVolume(inputEvent.value);
+            layerContext.sequencer.setVolume(inputEvent.value);
         }
 
         if (inputEvent.control == ControlId::Encoder1) {
-            layerContext.sequencerTimer.setBpm(inputEvent.value);
+            layerContext.sequencer.setBpm(inputEvent.value);
         }
     }
 
@@ -36,16 +36,16 @@ public:
         switch (event.control)
         {
             case ControlId::Fn0:
-                layerContext.sequencerTimer.togglePause();
+                layerContext.sequencer.togglePause();
 
                 break;
 
             case ControlId::Fn1:
-                layerContext.sequencerTimer.addQuarterNote();
+                layerContext.sequencer.addQuarterNote();
 
                 break;
             case ControlId::Fn2:
-                layerContext.sequencerTimer.toggleTrackMute(uiState.selectedTrack);
+                layerContext.sequencer.toggleTrackMute(uiState.selectedTrack);
 
                 break;
         }
@@ -56,7 +56,7 @@ public:
         switch (event.control)
         {
             case ControlId::Fn0:
-                layerContext.sequencerTimer.toggleStop();
+                layerContext.sequencer.toggleStop();
 
                 break;
 

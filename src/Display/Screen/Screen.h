@@ -5,10 +5,10 @@ class Screen
 {
 public:
     UIState& uiState;
-    SequencerTimer& sequencer;
+    Sequencer& sequencer;
     U8G2& u8g2;
 
-    explicit Screen(UIState& u, SequencerTimer& s, U8G2& u8g2)
+    explicit Screen(UIState& u, Sequencer& s, U8G2& u8g2)
         : uiState(u),
           sequencer(s),
           u8g2(u8g2)

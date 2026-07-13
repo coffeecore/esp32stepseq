@@ -10,27 +10,29 @@ class NavigationLayer : public Layer
         
         void applyEncoderMapping() override
         {
-            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
-            if (0 < Tcount-1) {
-                layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, Tcount-1, true);
-            }
+            // uint8_t Tcount = max<uint8_t>(1, layerContext.sequencer.trackCounts);
+            // if (0 < Tcount-1) {
+            //     layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, Tcount-1, true);
+            // }
+            layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, true);
             
-            QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
-            uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
-            if (0 < stepsCount-1) {
-                layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 0, 4, true);
-            }
+            // QuarterNote& quarterNote = layerContext.sequencer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
+            // uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
+            // if (0 < stepsCount-1) {
+            //     layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 0, 4, true);
+            // }
+            layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 0, 255, true);
         }
         
         void applyEncoderValues() override
         {
-            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
+            uint8_t Tcount = max<uint8_t>(0, layerContext.sequencer.trackCounts);
             if (0 < Tcount-1) {
                 layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, uiState.selectedTrack);
             }
             
-            QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
-            uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
+            QuarterNote& quarterNote = layerContext.sequencer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
+            uint8_t stepsCount = max<uint8_t>(0, quarterNote.stepsCount);
             if (0 < stepsCount-1) {
                 layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, uiState.selectedStep);
             }
@@ -49,7 +51,7 @@ class NavigationLayer : public Layer
                     }
                 }
 
-                QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
+                QuarterNote& quarterNote = layerContext.sequencer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
                 
                 if (uiState.selectedStep >= quarterNote.stepsCount) {
                     uiState.selectedStep = quarterNote.stepsCount - 1;
@@ -80,7 +82,7 @@ class NavigationLayer : public Layer
     private:
         void nextTrack()
         {
-            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
+            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencer.trackCounts);
  
             if (uiState.selectedTrack + 1 >= Tcount) {
                 uiState.selectedTrack = 0;
@@ -97,7 +99,7 @@ class NavigationLayer : public Layer
 
         void previousTrack()
         {
-            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
+            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencer.trackCounts);
  
             if (uiState.selectedTrack == 0) {
                 uiState.selectedTrack = Tcount - 1;
@@ -114,7 +116,7 @@ class NavigationLayer : public Layer
 
         void nextQuarterNote()
         {
-            if (uiState.selectedQuarterNote + 1 >= layerContext.sequencerTimer.quarterNoteCounts) {
+            if (uiState.selectedQuarterNote + 1 >= layerContext.sequencer.quarterNoteCounts) {
                 uiState.selectedQuarterNote = 0;
             } else {
                 uiState.selectedQuarterNote++;
@@ -125,7 +127,7 @@ class NavigationLayer : public Layer
         {
             if (uiState.selectedQuarterNote == 0) {
                 uiState.selectedQuarterNote =
-                layerContext.sequencerTimer.quarterNoteCounts - 1;
+                layerContext.sequencer.quarterNoteCounts - 1;
             } else {
                 uiState.selectedQuarterNote--;
             }
@@ -133,7 +135,7 @@ class NavigationLayer : public Layer
         
         void nextStep()
         {
-            QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
+            QuarterNote& quarterNote = layerContext.sequencer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
             
             uiState.selectedStep++;
             
@@ -152,7 +154,7 @@ class NavigationLayer : public Layer
             
             previousQuarterNote();
             
-            QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
+            QuarterNote& quarterNote = layerContext.sequencer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
             
             uiState.selectedStep = quarterNote.stepsCount - 1;
         }

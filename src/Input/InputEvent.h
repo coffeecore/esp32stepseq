@@ -47,7 +47,7 @@ enum class ControlId: int8_t
     ControlCount
 };
 
-typedef struct
+struct InputEvent
 {
     InputEventType type;
 
@@ -58,4 +58,4 @@ typedef struct
     ControlId control;
 
     int16_t delta;
-} InputEvent;
+};
