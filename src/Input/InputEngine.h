@@ -106,9 +106,10 @@ class InputEngine
                 if (fn >= 0)
                 {
                     if (!ctx.fnState[fn].consumed) {
-                        pressedLayer[fn]->onButtonHold(event);
-
-                        ctx.fnState[fn].holdTriggered= true;
+                        if (pressedLayer[fn]) {
+                            pressedLayer[fn]->onButtonHold(event);
+                        }
+                        ctx.fnState[fn].holdTriggered = true;
                     }
                 }
 

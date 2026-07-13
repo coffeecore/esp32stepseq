@@ -23,12 +23,12 @@ public:
     void onEncoder(InputEvent& inputEvent) override
     {
         if (inputEvent.control == ControlId::Encoder0) {
-            /** @implements  set sequencer volume */
             layerContext.sequencerTimer.setTrackVolume(uiState.selectedTrack,inputEvent.value);
         }
 
         if (inputEvent.control == ControlId::Encoder1) {
-            /** @implements  set sequencer bpm */
+            Serial.println("DEBUG TRANPOSE");
+            Serial.println(inputEvent.value);
             layerContext.sequencerTimer.setTrackTranspose(uiState.selectedTrack, inputEvent.value);
         }
     }

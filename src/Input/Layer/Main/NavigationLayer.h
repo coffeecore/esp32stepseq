@@ -7,8 +7,6 @@ class NavigationLayer : public Layer
 {
     public:
         using Layer::Layer;
-
-        uint8_t previousEncoderValue = 0;
         
         void applyEncoderMapping() override
         {
@@ -28,28 +26,29 @@ class NavigationLayer : public Layer
         {
             uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
             if (0 < Tcount-1) {
-                layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, uiState.selectedTrack);
+                layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, uiState.selectedTrack);
             }
             
             QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
             uint8_t stepsCount = max<uint8_t>(1, quarterNote.stepsCount);
             if (0 < stepsCount-1) {
-                layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, uiState.selectedStep);
-                previousEncoderValue = uiState.selectedStep;
+                layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, uiState.selectedStep);
             }
         }
         
         void onEncoder(InputEvent& inputEvent) override
         {
             if (inputEvent.control == ControlId::Encoder0) {
-                uiState.selectedTrack = inputEvent.value;
-                
-                if (uiState.selectedTrack >= uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS) {
-                    uiState.displayedTrack = uiState.selectedTrack - 1;
-                } else if (uiState.selectedTrack < uiState.displayedTrack) {
-                    uiState.displayedTrack = uiState.selectedTrack;
+                if (inputEvent.delta > 0) {
+                    while (inputEvent.delta--) {
+                        nextTrack();
+                    }
+                } else if (inputEvent.delta < 0) {
+                    while (inputEvent.delta++) {
+                        previousTrack();
+                    }
                 }
-                
+
                 QuarterNote& quarterNote = layerContext.sequencerTimer.tracks[uiState.selectedTrack].quarterNotes[uiState.selectedQuarterNote];
                 
                 if (uiState.selectedStep >= quarterNote.stepsCount) {
@@ -58,18 +57,13 @@ class NavigationLayer : public Layer
             }
             
             if (inputEvent.control == ControlId::Encoder1) {
-                Serial.printf("DELTA %d\n", inputEvent.delta);
                 if (inputEvent.delta > 0) {
                     while (inputEvent.delta--) {
-                        Serial.printf("LESS BEFORE %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                         nextStep();
-                        Serial.printf("LESS AFTER %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                     }
                 } else if (inputEvent.delta < 0) {
                     while (inputEvent.delta++) {
-                        Serial.printf("MORE BEFORE %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                         previousStep();
-                        Serial.printf("MORE AFTER %d %d\n", uiState.selectedStep, uiState.selectedQuarterNote);
                     }
                 }
             }
@@ -84,6 +78,40 @@ class NavigationLayer : public Layer
         }
 
     private:
+        void nextTrack()
+        {
+            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
+ 
+            if (uiState.selectedTrack + 1 >= Tcount) {
+                uiState.selectedTrack = 0;
+            } else {
+                uiState.selectedTrack++;
+            }
+ 
+            if (uiState.selectedTrack >= uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS) {
+                uiState.displayedTrack = uiState.selectedTrack - Constants::NUMBER_OF_DISPLAYED_TRACKS + 1;
+            } else if (uiState.selectedTrack < uiState.displayedTrack) {
+                uiState.displayedTrack = uiState.selectedTrack;
+            }
+        }
+
+        void previousTrack()
+        {
+            uint8_t Tcount = max<uint8_t>(1, layerContext.sequencerTimer.trackCounts);
+ 
+            if (uiState.selectedTrack == 0) {
+                uiState.selectedTrack = Tcount - 1;
+            } else {
+                uiState.selectedTrack--;
+            }
+ 
+            if (uiState.selectedTrack >= uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS) {
+                uiState.displayedTrack = uiState.selectedTrack - Constants::NUMBER_OF_DISPLAYED_TRACKS + 1;
+            } else if (uiState.selectedTrack < uiState.displayedTrack) {
+                uiState.displayedTrack = uiState.selectedTrack;
+            }
+        }
+
         void nextQuarterNote()
         {
             if (uiState.selectedQuarterNote + 1 >= layerContext.sequencerTimer.quarterNoteCounts) {

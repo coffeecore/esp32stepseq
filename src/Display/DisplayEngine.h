@@ -72,8 +72,8 @@ class DisplayEngine
             {
                 uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
                 while (pending--) {
-                    self->draw();
                 }
+                self->draw();
             }
         }
 

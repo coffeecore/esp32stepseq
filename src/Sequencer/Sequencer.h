@@ -4,17 +4,22 @@
 #include "Constants.h"
 #include "HTimer.h"
 #include "Display/Workspace.h"
+#include "Audio/IAudioEngine.h"
+#include "Audio/VoiceHandle.h"
+#include "Audio/PlayNoteRequest.h"
 
 typedef struct {
     bool state = false;
 
     uint8_t note = 60;
-    char noteStr[6] = "C-4";
-    uint32_t noteFreq = 26163;
 
     uint8_t length = 6;
 
     int8_t instrument = -1;
+
+    Command commands[2];
+
+    uint8_t commandCount = 0;
 } Step;
 
 typedef struct {
@@ -30,13 +35,14 @@ typedef struct {
 
 typedef struct {
     int8_t remainingTicks = 0;
-    Step* step = nullptr;
+    // Step* step = nullptr;
     bool active = false;
+    VoiceHandle voiceHandle;
 } TrackNoteState;
 
 typedef struct {
     QuarterNote quarterNotes[Constants::NUMBER_OF_QUARTER_NOTES];
-    int8_t transpose = 0;
+    int8_t transpose = -12;
     uint8_t volume = 255;
     bool mute = false;
 
@@ -50,14 +56,15 @@ enum class PlayState
     Stop
 };
 
-class SequencerTimer
+class Sequencer
 {
     private:
         HTimer& timer;
         UIState& uiState;
+        IAudioEngine& audioEngine;
         uint8_t currentTick = 0;
         TaskHandle_t xHandle = nullptr;
-        static SequencerTimer* instance;
+        static Sequencer* instance;
         uint8_t currentPattern = 0;
         uint8_t currentQuarterNote = 0;
         int8_t nextPattern = 0;
@@ -72,10 +79,11 @@ class SequencerTimer
         Track tracks[Constants::NUMBER_OF_TRACKS];
         uint8_t ppqn = Constants::DEFAULT_PPQN;
 
-
-        SequencerTimer(HTimer& _timer, UIState& _uiState): timer(_timer), uiState(_uiState)
+        Sequencer(HTimer& _timer, UIState& _uiState, IAudioEngine& _audioEngine):
+            timer(_timer),
+            uiState(_uiState),
+            audioEngine(_audioEngine)
         {
-
         }
 
         void begin()
@@ -123,35 +131,13 @@ class SequencerTimer
             return 60 * 1000 * 1000 / (ppqn * bpm);
         }
 
-        void midiToName(uint8_t midi, char* buffer, size_t bufferSize)
-        {
-            static const char* names[] =
-            {
-                "C", "C#", "D", "D#", "E", "F",
-                "F#", "G", "G#", "A", "A#", "B"
-            };
-
-            const char* note = names[midi % 12];
-            int8_t octave = (midi / 12) - 1;
-
-            if (note[1] == '\0') {
-                snprintf(buffer, bufferSize, "%s-%d", note, octave);
-            } else {
-                snprintf(buffer, bufferSize, "%s%d", note, octave);
-            }
-        }
-
-        uint32_t midiToFreq(uint8_t note) {
-            return (uint32_t)(44000.0 * pow(2.0, (note - 69) / 12.0));
-        }
-
         void setStepNoteMidi(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
         {
             Step& step = tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
 
             step.note = value;
-            midiToName(value, step.noteStr, sizeof(step.noteStr));
-            step.noteFreq = midiToFreq(value);
+            // midiToName(value, step.noteStr, sizeof(step.noteStr));
+            // step.noteFreq = midiToFreq(value);
         }
 
         void setStepNote(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t note, int8_t octave)
@@ -161,8 +147,8 @@ class SequencerTimer
             uint8_t value = note + (octave+1) * 12;
 
             step.note = value;
-            midiToName(value, step.noteStr, sizeof(step.noteStr));
-            step.noteFreq = midiToFreq(value);
+            // midiToName(value, step.noteStr, sizeof(step.noteStr));
+            // step.noteFreq = midiToFreq(value);
         }
 
         void setStepLength(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
@@ -377,7 +363,7 @@ class SequencerTimer
 
         static void sequencerTask(void* pvParameters)
         {
-            SequencerTimer* seq = static_cast<SequencerTimer*>(pvParameters);
+            Sequencer* seq = static_cast<Sequencer*>(pvParameters);
             for (;;) {
                 uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
@@ -450,6 +436,7 @@ class SequencerTimer
 
         bool advancePattern(uint8_t trackIndex, QuarterNote& quarterNote)
         {
+            Track& track = tracks[trackIndex];
             uint8_t current = quarterNote.stepIndex;
             Step& step = quarterNote.steps[current];
 
@@ -468,15 +455,15 @@ class SequencerTimer
             quarterNote.stepIndex = current;
 
             if (step.state) {
-
-                if (trackNoteStates[trackIndex].active) {
-                    triggerStepOff(*trackNoteStates[trackIndex].step);
+                TrackNoteState& trackNoteState = trackNoteStates[trackIndex];
+                
+                if (trackNoteState.active) {
+                    triggerStepOff(trackNoteState);
                 }
-                triggerStepOn(step);
+                trackNoteState.remainingTicks = step.length;
+                trackNoteState.active = true;
 
-                trackNoteStates[trackIndex].remainingTicks = step.length;
-                trackNoteStates[trackIndex].step = &step;
-                trackNoteStates[trackIndex].active = true;
+                triggerStepOn(step, track, trackNoteState);
             }
 
             return wrap;
@@ -486,33 +473,63 @@ class SequencerTimer
         {
             for (uint8_t i = 0; i < trackCounts; i++) {
 
-                if (!trackNoteStates[i].active) {
+                TrackNoteState& trackNoteState = trackNoteStates[i];
+                if (!trackNoteState.active) {
                     continue;
                 }
 
-                trackNoteStates[i].remainingTicks--;
+                trackNoteState.remainingTicks--;
 
-                if (trackNoteStates[i].remainingTicks <= 0) {
-                    triggerStepOff(*trackNoteStates[i].step);
-                    trackNoteStates[i].active = false;
+                if (trackNoteState.remainingTicks <= 0) {
+                    triggerStepOff(trackNoteState);
+                    trackNoteState.active = false;
                 }
             }
         }
 
-        void triggerStepOff(Step& step)
+        void triggerStepOff(TrackNoteState& trackNoteState)
         {
             // MIDI note off / stop voice
-            Serial.print("NOTE OFF : ");
+            Serial.print("TRIGGER NOTE OFF : ");
             Serial.println(millis());
+            audioEngine.stop(trackNoteState.voiceHandle);
         }
 
 
-        void triggerStepOn(Step& step)
+        void triggerStepOn(Step& step, Track& track, TrackNoteState& trackNoteState)
         {
             // MIDI / GPIO / synth trigger
-            Serial.print("NOTE ON : ");
+            Serial.print("TRIGGER NOTE ON : ");
             Serial.println(millis());
+
+            PlayNoteRequest request;
+            request.note = step.note;
+            request.velocity = track.volume;
+            request.instrument = step.instrument >= 0 ? step.instrument : track.instrument;
+            request.gate = step.length;
+            request.commandCount = step.commandCount;
+            request.commands = step.commands;
+            trackNoteState.voiceHandle = audioEngine.play(request);
         }
 };
 
-SequencerTimer* SequencerTimer::instance = nullptr;
+Sequencer* Sequencer::instance = nullptr;
+
+
+// void triggerStepOff(TrackNoteState trackNoteState)
+// {
+//     audio.stop(trackNoteState.voice);
+// }
+
+// void triggerStepOn(Step& step, Track& track)
+// {
+//     PlayNoteRequest request;
+//     request.note = step.note + track.transpose;
+//     request.velocity = track.volume;
+//     request.instrument = step.instrument >= 0 ? step.instrument : track.instrument;
+//     request.gate = step.length;
+//     // request.commands / commandCount si tu ajoutes des Command au Step
+
+//     TrackNoteState& state = trackNoteStates[trackIndex]; // adapte selon ton scope
+//     state.voice = audio.play(request);
+// }

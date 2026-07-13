@@ -53,7 +53,7 @@ typedef struct
 
     uint8_t id;
 
-    int16_t value;
+    int32_t value;
 
     ControlId control;
 

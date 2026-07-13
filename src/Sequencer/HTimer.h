@@ -18,10 +18,10 @@ class HTimer
 
             Serial.println("Start timer");
             globalInstance = this;
-            timer = timerBegin(0, 80, true);
-            timerAttachInterrupt(timer, &HTimer::onTimer, true);
-            timerAlarmWrite(timer, tickDurationInMicroSeconds, true); // 1000 µs = 1 ms
-            timerAlarmEnable(timer);
+            timer = timerBegin(1000000);
+            timerAttachInterrupt(timer, &HTimer::onTimer);
+            Serial.println("SET ALARM");
+            timerAlarm(timer, tickDurationInMicroSeconds, true, 0);
             Serial.println("Started timer");
 
         }
@@ -34,11 +34,8 @@ class HTimer
         void setTickDurationInMicroSeconds(uint64_t _tickDurationInMicroSeconds)
         {
             tickDurationInMicroSeconds = _tickDurationInMicroSeconds;
-
-            timerAlarmDisable(timer);
-            timerWrite(timer, 0); // optionnel : remet le compteur à zéro
-            timerAlarmWrite(timer, tickDurationInMicroSeconds, true);
-            timerAlarmEnable(timer);
+            Serial.println("SET ALARM");
+            timerAlarm(timer, tickDurationInMicroSeconds, true, 0);
         }
 
     private:

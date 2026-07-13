@@ -95,6 +95,7 @@ class Input
 
             if (next == readIndex) {
                 Serial.println("BUFFER OVERFLOW");
+                portEXIT_CRITICAL(&mux);
                 return;
             }
             ringBuffer[writeIndex] = e;
@@ -110,15 +111,16 @@ class Input
             Input* input = static_cast<Input*>(pvParameters);
             for (;;) {
                 for (uint8_t i = 0;i<Constants::NUMBER_OF_ROTARY_ENCODERS;i++) {
-                    int16_t delta = input->rotaryEncoders.rotaryEncoders[i].encoderChanged();
-                    if (0 != delta) {
+                    if (0 != input->rotaryEncoders.rotaryEncoders[i].encoderChanged()) {
                         InputEvent e;
                         e.id = i;
-                        e.delta = delta;
                         e.type = InputEventType::EncoderTurned;
+                        Serial.println("JJDDJJDJDJDJD");
+                        Serial.println(input->rotaryEncoders.rotaryEncoders[i].readEncoder());
+                        Serial.println(input->rotaryEncoders.minValue[i]);
+                        Serial.println(input->rotaryEncoders.maxValue[i]);
                         e.value = input->rotaryEncoders.rotaryEncoders[i].readEncoder();
-                        Serial.printf("delta=%d value=%ld\n", e.delta, e.value);
-                        // Serial.printf("RAW ENCODER = %ld\n", e.value);
+                        e.delta = input->rotaryEncoders.getDelta(input->rotaryEncoders.encoderToControl(i), e.value);
                         instance->pushEvent(e);
                     }
                 }

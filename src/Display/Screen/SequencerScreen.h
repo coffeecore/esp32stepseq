@@ -3,6 +3,7 @@
 #include "Display/Workspace.h"
 #include "SequencerTimer.h"
 #include "Display/Screen/Screen.h"
+#include "Audio/Notes.h"
 
 class SequencerScreen : public Screen
 {
@@ -77,8 +78,6 @@ public:
             sequencer.quarterNoteCounts
         );
         u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 9) + u8g2.getMaxCharWidth(), y, buffer);
-        Serial.println("SELECTED QN");
-        Serial.println(uiState.selectedQuarterNote);
 
         // Autoscroll
         snprintf(
@@ -116,15 +115,15 @@ public:
 
         for (uint8_t i = uiState.displayedTrack;i< uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS;i++) {
             // Tracks
-            char buffer[Constants::SCREEN_WIDTH / Constants::NUMBER_OF_DISPLAYED_TRACKS / u8g2.getMaxCharWidth() + 1];
+            char buffer[Constants::SCREEN_WIDTH / Constants::NUMBER_OF_DISPLAYED_TRACKS / u8g2.getMaxCharWidth() + 1 + 7];
             Track& track = sequencer.tracks[i];
 
             if (i == uiState.selectedTrack) {
                 snprintf(
                     buffer,
                     sizeof(buffer),
-                    "%1d %01X %3d %3d",
-                    i,
+                    "%01X %3d %3d A",
+                    // i,
                     track.instrument,
                     track.volume,
                     track.transpose
@@ -194,7 +193,7 @@ public:
                         buffer,
                         sizeof(buffer),
                         "%3s %c %s",
-                        step.noteStr,
+                        notesStr[step.note],
                         inst,
                         fx
                     );
