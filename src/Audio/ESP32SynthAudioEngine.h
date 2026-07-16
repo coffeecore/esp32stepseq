@@ -6,41 +6,9 @@
 #include "IAudioEngine.h"
 #include "PlayNoteRequest.h"
 #include "Audio/Notes.h"
+#include "Sample/SampleLoader.h"
 
-#include "closed_hihat_44100hz.h"
-
-enum class InstrumentSource : uint8_t
-{
-    Wave,
-    Sample
-};
-
-struct ADSR
-{
-    uint16_t attackMs = 5;
-    uint16_t decayMs = 150;
-    uint8_t sustainLvl = 200;
-    uint16_t releaseMs = 300;
-};
-
-// TODO: remplace par ta vraie structure/banque d'instruments. Elle n'existait
-// pas dans le code fourni, donc ceci reste un placeholder minimal couvrant
-// les deux cas (oscillateur interne / sample streamé) pour ne pas casser
-// la compilation.
-struct MyInstrument
-{
-    InstrumentSource source = InstrumentSource::Wave;
-
-    ADSR adsr;
-
-    // -- Cas Wave --
-    WaveType wave = WAVE_SINE;
-
-    // -- Cas Sample --
-    uint32_t sampleRootPitch = 44000; // centiHz de la note d'origine du sample
-    LoopMode sampleLoop = LOOP_OFF;
-    uint16_t sampleId = 0;
-};
+// #include "closed_hihat_44100hz.h"
 
 const SampleZone closed_hihat_44100hz[] = {
     { c0, g10, 0, c4 } 
@@ -49,9 +17,14 @@ const SampleZone closed_hihat_44100hz[] = {
 class ESP32SynthAudioEngine : public IAudioEngine
 {
     public:
-        explicit ESP32SynthAudioEngine(ESP32Synth& _synth) : synth(_synth)
+        explicit ESP32SynthAudioEngine(ESP32Synth& _synth, SampleLoader& _sampleLoader)
+            : synth(_synth),
+            sampleLoader(_sampleLoader)
         {
         }
+
+        uint8_t nextSample = 0;
+        int16_t samples[MAX_SAMPLES];
 
         void begin() override
         {
@@ -61,13 +34,38 @@ class ESP32SynthAudioEngine : public IAudioEngine
             }
         }
 
-        void setInstrument(uint8_t index, const MyInstrument& instrument)
+        uint8_t allocateSample()
         {
-            if (index >= Constants::NUMBER_OF_INSTRUMENTS) {
+            for (uint8_t i = 0; i < MAX_SAMPLES; i++) {
+                for (uint8_t j = 0; j < Constants::NUMBER_OF_INSTRUMENTS; j++) {
+                    if (instruments[j].sampleId != samples[i]) {
+                        return i;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        virtual void addSample(uint16_t sampleId)
+        {
+            uint16_t esp32SampleId = allocateSample();
+
+            samples[esp32SampleId] = sampleId;
+
+            synth.registerSample(esp32SampleId, sampleLoader.getData(sampleId), sampleLoader.getLength(sampleId), sampleLoader.getRate(sampleId), c4);
+        }
+
+        void addInstrument(const MyInstrument& instrument)
+        {
+            if (instrumentsCount >= Constants::NUMBER_OF_INSTRUMENTS) {
                 return;
             }
 
-            instruments[index] = instrument;
+            instrumentsCount++;
+
+            instruments[instrumentsCount] = instrument;
+            addSample(instrument.sampleId);
         }
 
         VoiceHandle play(const PlayNoteRequest& request) override
@@ -130,8 +128,7 @@ class ESP32SynthAudioEngine : public IAudioEngine
 
     private:
         ESP32Synth& synth;
-
-        MyInstrument instruments[Constants::NUMBER_OF_INSTRUMENTS];
+        SampleLoader& sampleLoader;
 
         bool voiceActive[Constants::NUMBER_OF_VOICES] = {false};
         InstrumentSource voiceSource[Constants::NUMBER_OF_VOICES] = {InstrumentSource::Wave};
@@ -168,15 +165,27 @@ class ESP32SynthAudioEngine : public IAudioEngine
 
         void applyInstrumentSample(uint8_t voice, const MyInstrument& inst)
         {
-            Instrument_Sample inst_closed_hihat_44100hz = {
-                closed_hihat_44100hz, // O const SampleZone de cima 
-                1, // Quantas zonas
-                inst.sampleLoop, // Modo de loop 
-                0, // inicio do loop
-                0  // fim do loop ( 0 = ultimo sample)
-            };
-            synth.registerSample(inst.sampleId, closed_hihat_44100hz_data, closed_hihat_44100hz_len, closed_hihat_44100hz_rate, c4);
-            synth.setInstrument(voice, &inst_closed_hihat_44100hz);
+            // Instrument_Sample inst_closed_hihat_44100hz = {
+            //     closed_hihat_44100hz, // O const SampleZone de cima 
+            //     1, // Quantas zonas
+            //     inst.sampleLoop, // Modo de loop 
+            //     0, // inicio do loop
+            //     0  // fim do loop ( 0 = ultimo sample)
+            // };
+            // uint16_t a[] = {};
+
+            // synth.registerSample(inst.sampleId, sampleLoader.getData(inst.sampleId, *a), sampleLoader.getLength(inst.sampleId), sampleLoader.getRate(inst.sampleId), c4);
+            uint8_t sampleId = 0;
+            for (uint8_t i = 0;i<MAX_SAMPLES;i++) {
+                if (samples[i] == inst.sampleId) {
+                    sampleId = i;
+
+                    break;
+                }
+            }
+            synth.setWave(voice, WAVE_SAMPLE);
+            synth.setSample(voice, sampleId, inst.sampleLoop, 0, 0);
+            // synth.setInstrument(voice, &inst_closed_hihat_44100hz);
 
             synth.setEnv(voice, inst.adsr.attackMs, inst.adsr.decayMs, inst.adsr.sustainLvl, inst.adsr.releaseMs);
         }

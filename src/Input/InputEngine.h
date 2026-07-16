@@ -6,6 +6,7 @@
 #include "Input/InputMode.h"
 #include "Display/Workspace.h"
 #include "Input/Layer/LayerContext.h"
+#include "Input/InputHelpers.h"
 
 class InputEngine
 {

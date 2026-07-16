@@ -1,3 +1,5 @@
+#include "Arduino.h"
+
 // Fichier: closed_hihat_44100hz.wav
 // Taxa: 44100 Hz | Samples: 3969
 const int16_t closed_hihat_44100hz_data[] = {

@@ -64,8 +64,9 @@ public:
         snprintf(
             buffer,
             sizeof(buffer),
-            "%01X",
-            uiState.selectedInstrument
+            "%01X/%01X",
+            uiState.selectedInstrument,
+            audioEngine.instrumentsCount
         );
         u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 7) + u8g2.getMaxCharWidth(), y, buffer);
 

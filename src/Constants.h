@@ -19,6 +19,8 @@ namespace Constants
   constexpr uint8_t SCREEN_WIDTH = 128;
   constexpr uint8_t  SCREEN_HEIGHT = 64;
 
+  constexpr uint16_t MAX_SAMPLES = 255;
+
   /**
   | OLED | ESP32   |
   | ---- | ------- |

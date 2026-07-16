@@ -2,18 +2,23 @@
 
 #include "Input/InputEvent.h"
 #include "Input/InputMode.h"
+#include "Input/ControlId.h"
 
-typedef struct {
+using FnMask = uint8_t;
+
+constexpr FnMask FN0 = 1u << 0;
+constexpr FnMask FN1 = 1u << 1;
+constexpr FnMask FN2 = 1u << 2;
+constexpr FnMask FN3 = 1u << 3;
+constexpr FnMask FN4 = 1u << 4;
+constexpr FnMask FN5 = 1u << 5;
+constexpr FnMask FN6 = 1u << 6;
+constexpr FnMask FN7 = 1u << 7;
+
+struct FnState {
     bool usedAsModifier = false;
     bool holdTriggered = false;
     bool consumed = false;
-} FnState;
-
-enum class ConfirmAction
-{
-    None,
-    DeleteQuarterNote,
-    ClearScreen
 };
 
 struct InputContext

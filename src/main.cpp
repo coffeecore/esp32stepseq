@@ -12,8 +12,13 @@
 #include "Audio/ESP32SynthAudioEngine.h"
 #include "Audio/Notes.h"
 
+#include "sampleswav/clap_44100hz.h"
+#include "sampleswav/closed_hihat_44100hz.h"
+#include "sampleswav/kick_44100hz.h"
+#include "sampleswav/snare_44100hz.h"
 
 #include "ESP32Synth.h"
+#include "Sample/SampleLoader.h"
 
 ESP32Synth synth;
 
@@ -27,13 +32,15 @@ HTimer hTimer;
 
 UIState uiState;
 
-ESP32SynthAudioEngine esp32SynthAudioEngine(synth);
+SampleLoader sampleLoader;
+
+ESP32SynthAudioEngine esp32SynthAudioEngine(synth, sampleLoader);
 
 Sequencer sequencer(hTimer, uiState, esp32SynthAudioEngine);
 
 RotaryEncoder rotaryEncoders;
 
-DisplayEngine displayEngine(u8g2, uiState, sequencer);
+DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine);
 
 InputEngine inputEngine(sequencer, rotaryEncoders, uiState);
 
@@ -77,6 +84,27 @@ void setup() {
     }
 
     initNotes();
+
+    sampleLoader.addSample(0, "closed_hihat_44100hz", "", closed_hihat_44100hz_data, closed_hihat_44100hz_len, closed_hihat_44100hz_rate);
+    sampleLoader.addSample(1, "clap_44100hz", "", clap_44100hz_data, clap_44100hz_len, clap_44100hz_rate);
+    sampleLoader.addSample(2, "snare_44100hz", "", snare_44100hz_data, snare_44100hz_len, snare_44100hz_rate);
+    sampleLoader.addSample(3, "kick_44100hz", "", kick_44100hz_data, kick_44100hz_len, kick_44100hz_rate);
+
+
+    ADSR adsr;
+
+    for (uint8_t i = 0;i<4;i++) {
+        MyInstrument myInstrument = {
+            InstrumentSource::Sample,
+            adsr,
+            WAVE_SAMPLE,
+            44000,
+            LOOP_OFF,
+            i
+        };
+
+        esp32SynthAudioEngine.addInstrument(myInstrument);
+    }
 
 
     sequencer.begin();

@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "Input/ControlId.h"
+
 enum class InputEventType
 {
     ButtonPressed,
@@ -9,42 +11,6 @@ enum class InputEventType
     ButtonHold,
 
     EncoderTurned
-};
-
-enum class ControlId: int8_t
-{
-    Step0,
-    Step1,
-    Step2,
-    Step3,
-    Step4,
-    Step5,
-    Step6,
-    Step7,
-    Step8,
-    Step9,
-    Step10,
-    Step11,
-
-    Fn0,
-    Fn1,
-    Fn2,
-    Fn3,
-    Fn4,
-    Fn5,
-    Fn6,
-    Fn7,
-    Fn8,
-    Fn9,
-    Fn10,
-    Fn11,
-
-    Encoder0,
-    Encoder1,
-
-    None,
-
-    ControlCount
 };
 
 struct InputEvent

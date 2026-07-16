@@ -7,6 +7,7 @@ class Sequencer;
 
 #include "Screen/Screen.h"
 #include "Screen/SequencerScreen.h"
+#include "Audio/IAudioEngine.h"
 
 class DisplayEngine
 {
@@ -21,11 +22,11 @@ class DisplayEngine
 
         TaskHandle_t taskHandle = nullptr;
 
-        explicit DisplayEngine(U8G2& u8g2, UIState& uiState, Sequencer& seq)
+        explicit DisplayEngine(U8G2& u8g2, UIState& uiState, Sequencer& seq, IAudioEngine& audioEngine)
             : u8g2(u8g2),
             ui(uiState),
             sequencer(seq),
-            sequencerScreen(uiState, seq, u8g2)
+            sequencerScreen(uiState, seq, u8g2, audioEngine)
         {
             currentScreen = &sequencerScreen;
         }
