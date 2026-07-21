@@ -7,6 +7,7 @@ class Sequencer;
 
 #include "Screen/Screen.h"
 #include "Screen/SequencerScreen.h"
+#include "Screen/InstrumentScreen.h"
 #include "Audio/IAudioEngine.h"
 
 class DisplayEngine
@@ -14,19 +15,17 @@ class DisplayEngine
     public:
         U8G2& u8g2;
         UIState& ui;
-        Sequencer& sequencer;
-
         SequencerScreen sequencerScreen;
-
+        InstrumentScreen instrumentScreen;
         Screen* currentScreen = nullptr;
-
         TaskHandle_t taskHandle = nullptr;
 
-        explicit DisplayEngine(U8G2& u8g2, UIState& uiState, Sequencer& seq, IAudioEngine& audioEngine)
+        explicit DisplayEngine(U8G2& u8g2, UIState& uiState, Sequencer& seq, IAudioEngine& audioEngine, MenuManager& menuManager)
             : u8g2(u8g2),
             ui(uiState),
-            sequencer(seq),
-            sequencerScreen(uiState, seq, u8g2, audioEngine)
+            sequencerScreen(uiState, seq, u8g2, audioEngine),
+            instrumentScreen(uiState, seq, u8g2, audioEngine, menuManager)
+            
         {
             currentScreen = &sequencerScreen;
         }
@@ -42,6 +41,9 @@ class DisplayEngine
             {
                 case Workspace::Sequencer:
                     currentScreen = &sequencerScreen;
+                    break;
+                case Workspace::Instrument:
+                    currentScreen = &instrumentScreen;
                     break;
             }
         }

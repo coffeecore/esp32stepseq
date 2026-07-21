@@ -24,4 +24,6 @@ struct InputEvent
     ControlId control;
 
     int16_t delta;
+
+    int8_t direction;
 };

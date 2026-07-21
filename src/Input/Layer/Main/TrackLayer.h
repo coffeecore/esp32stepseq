@@ -8,6 +8,16 @@ class TrackLayer : public Layer
 public:
     using Layer::Layer;
 
+    void onEnter(Layer* previous) override
+    {
+        uiState.displayTrackInfo = true;
+    }
+
+    void onExit(Layer* next) override
+    {
+        uiState.displayTrackInfo = false;
+    }
+
     void applyEncoderMapping() override
     {
         layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);

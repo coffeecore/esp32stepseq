@@ -21,6 +21,11 @@ namespace Constants
 
   constexpr uint16_t MAX_SAMPLES = 255;
 
+
+  template<typename T, size_t N>
+  constexpr size_t countof(const T (&)[N]) {
+    return N;
+  }
   /**
   | OLED | ESP32   |
   | ---- | ------- |

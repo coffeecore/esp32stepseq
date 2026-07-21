@@ -111,9 +111,8 @@ class RotaryEncoder
             return diff;
         }
 
-        long getDirection(ControlId encoder, long newValue)
+        long getDirectionFromDelta(long delta)
         {
-            long delta = getDelta(encoder, newValue);
             if (delta > 0) return 1;
             if (delta < 0) return -1;
             return 0;

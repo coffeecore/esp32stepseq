@@ -4,7 +4,8 @@
 
 enum class Workspace
 {
-    Sequencer
+    Sequencer,
+    Instrument
 };
 
 struct ConfirmDialog
@@ -34,6 +35,8 @@ struct UIState
     TaskHandle_t displayTask = nullptr;
 
     bool autoScroll = false;
+
+    bool displayTrackInfo = false;
 
     void requestRedraw()
     {

@@ -19,6 +19,7 @@
 
 #include "ESP32Synth.h"
 #include "Sample/SampleLoader.h"
+#include "Menu/MenuManager.h"
 
 ESP32Synth synth;
 
@@ -32,6 +33,8 @@ HTimer hTimer;
 
 UIState uiState;
 
+MenuManager menuManager;
+
 SampleLoader sampleLoader;
 
 ESP32SynthAudioEngine esp32SynthAudioEngine(synth, sampleLoader);
@@ -40,7 +43,7 @@ Sequencer sequencer(hTimer, uiState, esp32SynthAudioEngine);
 
 RotaryEncoder rotaryEncoders;
 
-DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine);
+DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine, menuManager);
 
 InputEngine inputEngine(sequencer, rotaryEncoders, uiState);
 
@@ -85,6 +88,11 @@ void setup() {
 
     initNotes();
 
+    synth.noteOn(0, notesFreq[60], 255);
+    synth.noteOff(0);
+
+    sampleLoader.begin();
+
     sampleLoader.addSample(0, "closed_hihat_44100hz", "", closed_hihat_44100hz_data, closed_hihat_44100hz_len, closed_hihat_44100hz_rate);
     sampleLoader.addSample(1, "clap_44100hz", "", clap_44100hz_data, clap_44100hz_len, clap_44100hz_rate);
     sampleLoader.addSample(2, "snare_44100hz", "", snare_44100hz_data, snare_44100hz_len, snare_44100hz_rate);
@@ -93,14 +101,14 @@ void setup() {
 
     ADSR adsr;
 
-    for (uint8_t i = 0;i<4;i++) {
+    for (uint8_t i = 0;i<12;i++) {
         MyInstrument myInstrument = {
             InstrumentSource::Sample,
             adsr,
             WAVE_SAMPLE,
             44000,
             LOOP_OFF,
-            i
+            i%4
         };
 
         esp32SynthAudioEngine.addInstrument(myInstrument);
@@ -118,8 +126,8 @@ void setup() {
     sequencer.addTrack();
     
     sequencer.addQuarterNote();
-    sequencer.addQuarterNote();
-    sequencer.addQuarterNote();
+    // sequencer.addQuarterNote();
+    // sequencer.addQuarterNote();
 
     displayEngine.begin();
 

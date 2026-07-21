@@ -62,10 +62,9 @@ class ESP32SynthAudioEngine : public IAudioEngine
                 return;
             }
 
-            instrumentsCount++;
-
             instruments[instrumentsCount] = instrument;
             addSample(instrument.sampleId);
+            instrumentsCount++;
         }
 
         VoiceHandle play(const PlayNoteRequest& request) override
@@ -96,6 +95,7 @@ class ESP32SynthAudioEngine : public IAudioEngine
                 applyCommands(voice, request);
 
                 uint32_t freqCentiHz = notesFreq[request.note];
+                Serial.println("ESP32 SYTNH NOTE ON SAMPLE");
                 synth.noteOn(voice, freqCentiHz, request.velocity);
             } else {
                 voiceSource[voice] = InstrumentSource::Wave;
@@ -104,6 +104,7 @@ class ESP32SynthAudioEngine : public IAudioEngine
                 applyCommands(voice, request);
 
                 uint32_t freqCentiHz = notesFreq[request.note];
+                Serial.println("ESP32 SYTNH NOTE ON WAVE");
                 synth.noteOn(voice, freqCentiHz, request.velocity);
             }
 
@@ -122,6 +123,7 @@ class ESP32SynthAudioEngine : public IAudioEngine
             // confirmé dans la doc consultée. Vérifie dans ton ESP32Synth.h
             // local s'il en existe une ; sinon noteOff(voice) coupe peut-être
             // aussi un stream (comportement à vérifier empiriquement).
+            Serial.println("ESP32 SYTNH NOTE OFF");
             synth.noteOff(voice.id);
             voiceActive[voice.id] = false;
         }
@@ -165,16 +167,6 @@ class ESP32SynthAudioEngine : public IAudioEngine
 
         void applyInstrumentSample(uint8_t voice, const MyInstrument& inst)
         {
-            // Instrument_Sample inst_closed_hihat_44100hz = {
-            //     closed_hihat_44100hz, // O const SampleZone de cima 
-            //     1, // Quantas zonas
-            //     inst.sampleLoop, // Modo de loop 
-            //     0, // inicio do loop
-            //     0  // fim do loop ( 0 = ultimo sample)
-            // };
-            // uint16_t a[] = {};
-
-            // synth.registerSample(inst.sampleId, sampleLoader.getData(inst.sampleId, *a), sampleLoader.getLength(inst.sampleId), sampleLoader.getRate(inst.sampleId), c4);
             uint8_t sampleId = 0;
             for (uint8_t i = 0;i<MAX_SAMPLES;i++) {
                 if (samples[i] == inst.sampleId) {
@@ -185,7 +177,6 @@ class ESP32SynthAudioEngine : public IAudioEngine
             }
             synth.setWave(voice, WAVE_SAMPLE);
             synth.setSample(voice, sampleId, inst.sampleLoop, 0, 0);
-            // synth.setInstrument(voice, &inst_closed_hihat_44100hz);
 
             synth.setEnv(voice, inst.adsr.attackMs, inst.adsr.decayMs, inst.adsr.sustainLvl, inst.adsr.releaseMs);
         }

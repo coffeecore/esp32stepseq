@@ -109,6 +109,12 @@ void loop() {
 
 L'onde la plus "pure" : un seul harmonique (la fondamentale), aucun autre. C'est le son le plus doux/rond des cinq.
 
+> Précision : le schéma ci-dessus est **indépendant de toute fréquence précise** — l'axe horizontal est en degrés de phase (0° à 720°, soit 2 cycles génériques), pas en temps réel. Pour voir concrètement l'effet de la fréquence sur la même onde, voici Do4 (`c4`) comparé à Do5 (`c5`, une octave au-dessus) sur un axe de temps réel :
+
+![Comparaison Do4 vs Do5 sur l'onde sinus](images/wave_sine_c4_vs_c5.svg)
+
+Même code (`WAVE_SINE` natif), seule la fréquence passée à `noteOn()`/`setFrequency()` change — Do5 étant une octave au-dessus de Do4, sa période est exactement deux fois plus courte (les pics sont deux fois plus rapprochés dans le temps).
+
 ![Onde triangulaire](images/wave_triangle.svg)
 
 Ne contient que des harmoniques impairs, avec une amplitude qui décroît très vite (en 1/n²) — un son doux, assez proche du sinus mais légèrement plus "présent".

@@ -78,7 +78,7 @@ public:
             sequencer.quarterNoteCounts > 0 ? uiState.selectedQuarterNote + 1: uiState.selectedQuarterNote,
             sequencer.quarterNoteCounts
         );
-        u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 9) + u8g2.getMaxCharWidth(), y, buffer);
+        u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 12) + u8g2.getMaxCharWidth(), y, buffer);
 
         // Autoscroll
         snprintf(
@@ -87,9 +87,10 @@ public:
             "%d",
             uiState.autoScroll
         );
-        u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 16) + u8g2.getMaxCharWidth(), y, buffer);
+        u8g2.drawStr(x + (u8g2.getMaxCharWidth() * 19) + u8g2.getMaxCharWidth(), y, buffer);
 
         // --- TRACKS QUARTER NOTES ---
+        // Navigation arrow
         if (sequencer.trackCounts > (uiState.displayedTrack + Constants::NUMBER_OF_DISPLAYED_TRACKS)) {
             u8g2.drawVLine(125, 30, 5);
             u8g2.drawVLine(126, 31, 3);
@@ -120,15 +121,23 @@ public:
             Track& track = sequencer.tracks[i];
 
             if (i == uiState.selectedTrack) {
-                snprintf(
-                    buffer,
-                    sizeof(buffer),
-                    "%01X %3d %3d A",
-                    // i,
-                    track.instrument,
-                    track.volume,
-                    track.transpose
-                );
+                if (uiState.displayTrackInfo) {
+                    snprintf(
+                        buffer,
+                        sizeof(buffer),
+                        "%01X %3d %3d",
+                        track.instrument,
+                        track.volume,
+                        track.transpose
+                    );
+                } else {
+                    snprintf(
+                        buffer,
+                        sizeof(buffer),
+                        "> Tr%1d",
+                        i
+                    );
+                }
 
                 u8g2.drawStr((i - uiState.displayedTrack)*60, u8g2.getAscent() + 1 * u8g2.getMaxCharHeight(), buffer);
             } else {

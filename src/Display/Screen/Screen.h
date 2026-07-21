@@ -1,5 +1,6 @@
 #pragma once
 #include <U8g2lib.h>
+#include "Menu/MenuManager.h"
 
 class Screen
 {
@@ -18,4 +19,13 @@ public:
     }
 
     virtual void draw() = 0;
+};
+
+class MenuScreen : public Screen
+{
+    public:
+        using Screen::Screen;
+
+    protected:
+        MenuManager menuManager;
 };

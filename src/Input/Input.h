@@ -121,6 +121,7 @@ class Input
                         // Serial.println(input->rotaryEncoders.maxValue[i]);
                         e.value = input->rotaryEncoders.rotaryEncoders[i]->readEncoder();
                         e.delta = input->rotaryEncoders.getDelta(input->rotaryEncoders.encoderToControl(i), e.value);
+                        e.direction = input->rotaryEncoders.getDirectionFromDelta(e.delta);
                         instance->pushEvent(e);
                     }
                 }

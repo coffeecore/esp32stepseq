@@ -6,9 +6,10 @@ Cette documentation a été générée à partir du code source réel de la bibl
 
 ## Sommaire
 
-1. **[01_Guide_API.md](01_Guide_API.md)** — Référence complète de l'API : initialisation, contrôle des voix, enveloppes, modulations, wavetables, échantillons, streaming SD, hooks DSP personnalisés, getters, etc.
+1. **[01_Guide_API.md](01_Guide_API.md)** — Référence complète de l'API : initialisation, contrôle des voix, enveloppes, modulations, wavetables, échantillons, streaming SD, hooks DSP personnalisés, getters, plus un guide pratique pour visualiser tes ondes en direct sur écran OLED (§18).
 2. **[02_Demarrage_Rapide.md](02_Demarrage_Rapide.md)** — Guide de démarrage rapide, installation, premier programme, philosophie de la bibliothèque (pourquoi 500 voix ?), configuration mémoire.
-3. **Exemples traduits et expliqués** (dossier `exemples/`) — Chaque fichier regroupe plusieurs exemples originaux du même thème, avec le code traduit (commentaires en français) et une explication pédagogique de ce qu'il se passe.
+3. **[03_Theorie_Melange_Ondes_Filtres_LFO.md](03_Theorie_Melange_Ondes_Filtres_LFO.md)** — Support théorique (formules + schémas) sur la synthèse additive (comment carré/dent de scie/triangle sont construits à partir de sinus), les filtres passe-bas/passe-haut/résonants (SVF), et les LFO — pour comprendre et implémenter tes propres wavetables/filtres/effets.
+4. **Exemples traduits et expliqués** (dossier `exemples/`) — Chaque fichier regroupe plusieurs exemples originaux du même thème, avec le code traduit (commentaires en français) et une explication pédagogique de ce qu'il se passe.
 
    | Fichier | Exemples couverts |
    |---|---|
