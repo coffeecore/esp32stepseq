@@ -25,7 +25,7 @@ public:
 
         Step& step = layerContext.sequencer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
 
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, step.instrument);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, step.instrument);
     }
 
     void onEncoder(InputEvent& inputEvent) override

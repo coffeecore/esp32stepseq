@@ -36,6 +36,9 @@ class InstrumentScreen : public MenuScreen
 public:
     Menu menu;
 
+    int8_t source;
+    int8_t wave;
+
     InstrumentScreen(UIState& u,
                      Sequencer& s,
                      U8G2& d,
@@ -45,12 +48,13 @@ public:
     {
     }
 
-    void begin()
+    void open()
     {
+        menu.clear();
         MyInstrument& instrument = audioEngine.instruments[uiState.selectedInstrument];
 
-        int8_t source = static_cast<int8_t>(instrument.source);
-        int8_t wave = static_cast<int8_t>(instrument.wave);
+        source = static_cast<int8_t>(instrument.source);
+        wave = static_cast<int8_t>(instrument.wave);
 
         Serial.println("instruct");
         Serial.println(uiState.selectedInstrument);
@@ -70,6 +74,10 @@ public:
 
     void draw() override
     {
-        drawMenu();
+        if (uiState.uiOverlay == UIOverlay::Menu) {
+            drawMenu();
+
+            return;
+        }
     }
 };

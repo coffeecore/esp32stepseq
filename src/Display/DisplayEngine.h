@@ -15,6 +15,7 @@ class DisplayEngine
     public:
         U8G2& u8g2;
         UIState& ui;
+        UIOverlay previousOverlay;
         SequencerScreen sequencerScreen;
         InstrumentScreen instrumentScreen;
         Screen* currentScreen = nullptr;
@@ -23,6 +24,7 @@ class DisplayEngine
         explicit DisplayEngine(U8G2& u8g2, UIState& uiState, Sequencer& seq, IAudioEngine& audioEngine, MenuManager& menuManager)
             : u8g2(u8g2),
             ui(uiState),
+            previousOverlay(uiState.uiOverlay),
             sequencerScreen(uiState, seq, u8g2, audioEngine),
             instrumentScreen(uiState, seq, u8g2, audioEngine, menuManager)
             
@@ -56,9 +58,15 @@ class DisplayEngine
 
             currentScreen = nextScreen;
 
-            if (currentScreen == &instrumentScreen) {
-                instrumentScreen.begin();
+            if (
+                currentScreen == &instrumentScreen &&
+                ui.uiOverlay == UIOverlay::Menu &&
+                previousOverlay != UIOverlay::Menu
+            ) {
+                instrumentScreen.open();
             }
+
+            previousOverlay = ui.uiOverlay;
         }
 
         void draw()

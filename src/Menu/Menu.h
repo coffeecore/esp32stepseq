@@ -12,6 +12,11 @@ class Menu {
 
         explicit Menu(const char* title = nullptr) : _title(title) {}
 
+        void clear()
+        {
+            _count = 0;
+        }
+
         // Ajoute un item "brut" deja construit. Retourne false si le menu
         // est plein (16 items atteints) plutot que de deborder silencieusement.
         bool addItem(const MenuItem& menuItem)

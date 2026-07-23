@@ -17,8 +17,8 @@ public:
 
     void applyEncoderValues() override
     {
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencer.volume);
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencer.bpm);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, layerContext.sequencer.volume);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, layerContext.sequencer.bpm);
     }
 
     void onEncoder(InputEvent& inputEvent) override

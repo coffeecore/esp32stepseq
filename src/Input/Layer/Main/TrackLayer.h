@@ -26,8 +26,8 @@ public:
 
     void applyEncoderValues() override
     {
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.sequencer.tracks[uiState.selectedTrack].volume);
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.sequencer.tracks[uiState.selectedTrack].transpose);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, layerContext.sequencer.tracks[uiState.selectedTrack].volume);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, layerContext.sequencer.tracks[uiState.selectedTrack].transpose);
     }
 
     void onEncoder(InputEvent& inputEvent) override

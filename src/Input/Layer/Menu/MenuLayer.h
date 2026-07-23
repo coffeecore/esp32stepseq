@@ -20,18 +20,21 @@ public:
         MenuItem* menuItem = layerContext.menuManager.currentItem();
 
         if (nullptr == menuItem) {
-            layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, 0);
-            layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, 0);
+            layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, 0);
+            layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, 0);
 
             return;
         }
 
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, layerContext.menuManager.selectedIndex());
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, layerContext.menuManager.selectedIndex());
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, layerContext.menuManager.selectedIndex());
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, layerContext.menuManager.selectedIndex());
     }
 
     void onEncoder(InputEvent& inputEvent) override
     {
+        Serial.println("VALUE");
+        Serial.println(inputEvent.delta);
+        Serial.println(inputEvent.direction);
         if (inputEvent.direction > 0) {
             Serial.println("NEXT");
             layerContext.menuManager.next();

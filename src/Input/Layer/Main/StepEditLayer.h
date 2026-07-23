@@ -21,8 +21,8 @@ class StepEditLayer : public Layer
 
             Step& step = layerContext.sequencer.tracks[uiState.displayedTrack + row].quarterNotes[uiState.selectedQuarterNote].steps[col];
 
-            layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, step.note % 12);
-            layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, step.note / 12 - 1);
+            layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, step.note % 12);
+            layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, step.note / 12 - 1);
         }
 
         void onEncoder(InputEvent& event) override

@@ -21,9 +21,9 @@ public:
     {
         Track& track = layerContext.sequencer.tracks[uiState.selectedTrack];
 
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder0, track.instrument);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, track.instrument);
 
-        layerContext.rotaryEncoders.setEncoderValue(ControlId::Encoder1, uiState.selectedInstrument);
+        layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, uiState.selectedInstrument);
     }
 
     void onEncoder(InputEvent& inputEvent) override
