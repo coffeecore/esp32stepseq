@@ -37,14 +37,27 @@ class DisplayEngine
 
         void resolveScreen()
         {
+            Screen* nextScreen = nullptr;
+
             switch (ui.workspace)
             {
                 case Workspace::Sequencer:
-                    currentScreen = &sequencerScreen;
+                    nextScreen = &sequencerScreen;
                     break;
+
                 case Workspace::Instrument:
-                    currentScreen = &instrumentScreen;
+                    nextScreen = &instrumentScreen;
                     break;
+            }
+
+            if (nextScreen == currentScreen) {
+                return;
+            }
+
+            currentScreen = nextScreen;
+
+            if (currentScreen == &instrumentScreen) {
+                instrumentScreen.begin();
             }
         }
 
@@ -53,12 +66,6 @@ class DisplayEngine
             resolveScreen();
 
             u8g2.clearBuffer();
-
-            if (ui.confirm.active) {
-                drawConfirm();
-                u8g2.sendBuffer();
-                return;
-            }
 
             if (currentScreen) {
                 currentScreen->draw();

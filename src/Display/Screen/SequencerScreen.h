@@ -5,10 +5,10 @@
 #include "Display/Screen/Screen.h"
 #include "Audio/Notes.h"
 
-class SequencerScreen : public Screen
+class SequencerScreen : public ConfirmScreen
 {
 public:
-    using Screen::Screen;
+    using ConfirmScreen::ConfirmScreen;
 
     void draw() override
     {
@@ -222,5 +222,7 @@ public:
                 }
             }
         }
+
+        drawConfirm();
     }
 };

@@ -30,13 +30,13 @@ union MenuValue {
     bool* boolean;
     int32_t* integer;
     float* floating;
-    uint8_t* enumeration; // pointe vers la valeur "brute" d'un enum (son underlying type)
+    int8_t* enumeration; // pointe vers la valeur "brute" d'un enum (son underlying type)
 
     constexpr MenuValue() : ptr(nullptr) {}
     constexpr MenuValue(bool* v) : boolean(v) {}
     constexpr MenuValue(int32_t* v) : integer(v) {}
     constexpr MenuValue(float* v) : floating(v) {}
-    constexpr MenuValue(uint8_t* v) : enumeration(v) {}
+    constexpr MenuValue(int8_t* v) : enumeration(v) {}
 };
 
 // Callbacks de formatage optionnels : si tu veux un affichage custom
@@ -50,7 +50,7 @@ using BoolFormatCallback  = const char* (*)(bool);
 // Une entree d'un menu ENUM : la valeur brute stockee (doit correspondre a
 // l'underlying type de ton enum, caste en uint8_t) + le texte affiche.
 struct EnumOption {
-    uint8_t value;
+    int8_t value;
     const char* label;
 };
 

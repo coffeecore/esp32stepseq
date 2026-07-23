@@ -3,10 +3,12 @@
 #include "Input/Layer/Layer.h"
 #include "Input/Layer/LayerGroup.h"
 #include "Input/Layer/MainLayerGroup.h"
+#include "Input/Layer/MenuLayerGroup.h"
 #include "Input/InputMode.h"
 #include "Display/Workspace.h"
 #include "Input/Layer/LayerContext.h"
 #include "Input/InputHelpers.h"
+#include "Menu/MenuManager.h"
 
 class InputEngine
 {
@@ -21,6 +23,7 @@ class InputEngine
         RotaryEncoder& rotaryEncoders;
 
         MainLayerGroup mainLayerGroup;
+        MenuLayerGroup menuLayerGroup;
 
         LayerGroup* currentLayerGroup = nullptr;
 
@@ -32,13 +35,14 @@ class InputEngine
         // actif change pendant que le bouton est maintenu.
         Layer* pressedLayer[Constants::NUMBER_OF_BUTTONS] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
 
-        explicit InputEngine(Sequencer& _sequencer, RotaryEncoder& _rotaryEncoders, UIState& _ui)
+        explicit InputEngine(Sequencer& _sequencer, RotaryEncoder& _rotaryEncoders, UIState& _ui, MenuManager& _menuManager)
             :
             ui(_ui),
-            layerContext(_sequencer, _rotaryEncoders),
+            layerContext(_sequencer, _rotaryEncoders, _menuManager),
             sequencer(_sequencer),
             rotaryEncoders(_rotaryEncoders),
-            mainLayerGroup(ctx, layerContext, ui)
+            mainLayerGroup(ctx, layerContext, ui),
+            menuLayerGroup(ctx, layerContext, ui)
         {
         }
 
@@ -52,10 +56,22 @@ class InputEngine
 
         void resolveLayerGroup()
         {
+            if (ui.uiOverlay == UIOverlay::Menu)
+            {
+                currentLayerGroup = &menuLayerGroup;
+
+                return;
+            }
+
             switch (ui.workspace)
             {
                 case Workspace::Sequencer:
                     currentLayerGroup = &mainLayerGroup;
+
+                    break;
+
+                // case Workspace::Instrument:
+                    // currentLayerGroup = &instrumentLayerGroup;
 
                     break;
             }
@@ -272,125 +288,3 @@ class InputEngine
         }
     }
 };
-
-
-/*
-void handleEvent(InputEvent& event)
-{
-    // Associe l'événement physique (bouton/encodeur)
-    // à un ControlId logique selon le LayerGroup courant.
-    switch (event.type)
-    {
-        ...
-    }
-
-    // Synchronise le layer actif avec le contexte actuel.
-    // Cela permet par exemple de quitter un ModalLayer
-    // qui aurait été fermé par l'événement précédent.
-    resolveCurrentLayer();
-
-    // Met à jour l'état des touches (Fn, Step...)
-    // avant le traitement de l'événement.
-    updateContext(event);
-
-    int8_t fn = fnIndex(event.control);
-
-    switch (event.type)
-    {
-        case InputEventType::ButtonPressed:
-        {
-            // Mémorise le layer ayant reçu l'appui.
-            // Les événements Hold/Tap devront être renvoyés
-            // au même layer même si le layer actif change entre-temps.
-            if (fn >= 0)
-                pressedLayer[fn] = currentLayer;
-
-            if (isStep(event.control))
-            {
-                // Toute Fn déjà maintenue devient un modificateur
-                // lorsqu'un Step est pressé.
-                ...
-
-                currentLayer->onStepPressed(event);
-            }
-
-            break;
-        }
-
-        case InputEventType::ButtonHold:
-        {
-            // Le Hold est envoyé au layer qui a reçu le ButtonPressed.
-            // Cela évite qu'un changement de layer pendant le maintien
-            // modifie le comportement.
-            ...
-
-            break;
-        }
-
-        case InputEventType::ButtonReleased:
-        {
-            // Les événements StepReleased sont envoyés
-            // uniquement si le Step n'a pas servi de modificateur.
-            ...
-
-            // Un Tap est envoyé uniquement si le bouton
-            // n'a été ni utilisé comme modificateur
-            // ni transformé en Hold.
-            ...
-
-            // Nettoyage de l'état Fn.
-            ...
-
-            break;
-        }
-
-        case InputEventType::EncoderTurned:
-        {
-            // Dès qu'un encodeur est tourné,
-            // toutes les Fn actuellement maintenues
-            // deviennent des modificateurs.
-            ...
-
-            // Un Step maintenu devient également
-            // un modificateur.
-            ...
-
-            // Les Fn ayant servi de modificateur
-            // ne pourront plus générer de Tap.
-            ...
-
-            currentLayer->onEncoder(event);
-
-            break;
-        }
-    }
-
-    // Le traitement précédent a pu modifier le contexte
-    // (Fn pressée, Step relâché, fermeture d'une modal...).
-    // On résout donc le layer actif pour les prochains événements.
-    resolveCurrentLayer();
-
-    // Le layer actif applique son mapping d'encodeurs
-    // et synchronise leurs valeurs.
-    currentLayer->applyEncoderMapping();
-    currentLayer->applyEncoderValues();
-
-    // Demande le rafraîchissement de l'interface.
-    ui.requestRedraw();
-}
-
-void resolveCurrentLayer()
-{
-    // Détermine le layer actif à partir du contexte courant.
-    // Si le layer change, appelle automatiquement
-    // onExit() sur l'ancien puis onEnter() sur le nouveau.
-    ...
-}
-
-// Layer ayant reçu le ButtonPressed de chaque touche Fn.
-// Permet de garantir que les événements Hold et Tap
-// sont toujours envoyés au même layer, même si le layer
-// actif change pendant que le bouton est maintenu.
-Layer* pressedLayer[Constants::NUMBER_OF_BUTTONS] = { ... };
-
-*/

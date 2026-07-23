@@ -47,58 +47,53 @@ class MainLayerGroup: public LayerGroup
 
         Layer* layer() override
         {
-            if (inputContext.modal != ModalState::None)
-            {
+            if (uiState.uiOverlay == UIOverlay::Confirm) {
                 Serial.println("MODAL LAYER");
                 return &modal;
             }
 
-            if (inputContext.stepHeld)
-            {
-                if (inputContext.fnMask & FN1)
-                {
+            if (inputContext.stepHeld) {
+                if (inputContext.fnMask & FN1) {
                     Serial.println("QUARTER NOTE LENGTH LAYER");
                     return &quarterNoteLength;
 
                 }
-                if (inputContext.fnMask & FN2)
-                {
+
+                if (inputContext.fnMask & FN2) {
                     Serial.println("STEP LENGTH LAYER");
                     return &stepLength;
 
                 }
 
-                if (inputContext.fnMask & FN3)
-                {
+                if (inputContext.fnMask & FN3) {
                     Serial.println("STEP INSTRUMENT LAYER");
                     return &stepInstrument;
 
                 }
+
                 Serial.println("STEP EDIT LAYER");
                 return &stepEdit;
 
             }
 
-            if (inputContext.fnMask & FN1)
-            {
+            if (inputContext.fnMask & FN1) {
                 Serial.println("NAVIGATION LAYER");
                 return &navigation;
 
             }
 
-            if (inputContext.fnMask & FN2)
-            {
+            if (inputContext.fnMask & FN2) {
                 Serial.println("TRACK LAYER");
                 return &track;
 
             }
 
-            if (inputContext.fnMask & FN3)
-            {
+            if (inputContext.fnMask & FN3) {
                 Serial.println("GLOBAL INSTRUMENT LAYER");
                 return &globalInstrument;
 
             }
+            
             Serial.println("GLOBAL LAYER");
             return &global;
         }

@@ -8,17 +8,37 @@ enum class Workspace
     Instrument
 };
 
+enum class UIOverlay : uint8_t
+{
+    None,
+
+    Menu,
+    Confirm
+};
+
 struct ConfirmDialog
 {
-    bool active = false;
     const char* text = nullptr;
+
+    void open(const char* message)
+    {
+        text = message;
+    }
+
+    void close()
+    {
+        text = nullptr;
+    }
 };
 
 struct UIState
 {
     Workspace workspace = Workspace::Sequencer;
 
-    ModalState modal = ModalState::None;
+    UIOverlay uiOverlay = UIOverlay::None;
+
+    // ModalState modal = ModalState::None;
+
 
     uint8_t selectedInstrument = 0;
 
@@ -37,6 +57,18 @@ struct UIState
     bool autoScroll = false;
 
     bool displayTrackInfo = false;
+
+    void openConfirm(const char* message)
+    {
+        confirm.open(message);
+        uiOverlay = UIOverlay::Confirm;
+    }
+
+    void closeConfirm()
+    {
+        confirm.close();
+        uiOverlay = UIOverlay::None;
+    }
 
     void requestRedraw()
     {

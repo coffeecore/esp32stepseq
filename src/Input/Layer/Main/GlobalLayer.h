@@ -2,6 +2,7 @@
 
 #include "Input/Layer/Layer.h"
 #include "Input/InputMode.h"
+#include "Display/Workspace.h"
 
 class GlobalLayer : public Layer
 {
@@ -48,6 +49,12 @@ public:
                 layerContext.sequencer.toggleTrackMute(uiState.selectedTrack);
 
                 break;
+
+            case ControlId::Fn3:
+                uiState.workspace = Workspace::Instrument;
+                uiState.uiOverlay = UIOverlay::Menu;
+
+                break;
         }
     }
 
@@ -62,9 +69,7 @@ public:
 
             case ControlId::Fn1:
                 inputContext.confirmAction = ConfirmAction::DeleteQuarterNote;
-                inputContext.modal = ModalState::Confirm;
-                uiState.confirm.text = "Delete quarter note ?";
-                uiState.confirm.active = true;
+                uiState.openConfirm("Delete quarter note ?");
 
                 break;
 

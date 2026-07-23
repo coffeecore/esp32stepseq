@@ -45,7 +45,7 @@ RotaryEncoder rotaryEncoders;
 
 DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine, menuManager);
 
-InputEngine inputEngine(sequencer, rotaryEncoders, uiState);
+InputEngine inputEngine(sequencer, rotaryEncoders, uiState, menuManager);
 
 Input input(sequencer, inputEngine, rotaryEncoders);
 

@@ -28,7 +28,7 @@ struct InputContext
     bool stepHeld = false;
     ControlId stepId = ControlId::None;
 
-    ModalState modal = ModalState::None;
+    // ModalState modal = ModalState::None;
 
     FnState fnState[8];
 

@@ -10,9 +10,9 @@ public:
     U8G2& u8g2;
     IAudioEngine& audioEngine;
 
-    explicit Screen(UIState& u, Sequencer& s, U8G2& u8g2, IAudioEngine& audioEngine)
-        : uiState(u),
-          sequencer(s),
+    explicit Screen(UIState& uiState, Sequencer& sequencer, U8G2& u8g2, IAudioEngine& audioEngine)
+        : uiState(uiState),
+          sequencer(sequencer),
           u8g2(u8g2),
           audioEngine(audioEngine)
     {
@@ -24,8 +24,164 @@ public:
 class MenuScreen : public Screen
 {
     public:
-        using Screen::Screen;
+        MenuScreen(UIState& uiState,
+                     Sequencer& sequencer,
+                     U8G2& u8g2,
+                     IAudioEngine& audioEngine,
+                     MenuManager& menuManager
+        )
+        : Screen(uiState, sequencer, u8g2, audioEngine),
+        menuManager(menuManager)
+        {
+        }
+
+        virtual void drawMenu()
+        {
+            const Menu* menu = menuManager.currentMenu();
+
+            if (nullptr == menu) {
+                return;
+            }
+
+            constexpr uint8_t FIRST_ROW = 21;
+            constexpr uint8_t ROW_HEIGHT = 8;
+            uint8_t x = 0;
+            uint8_t y = 0;
+            x = u8g2.getMaxCharWidth() * 2;
+            y = u8g2.getAscent() + 0 * u8g2.getMaxCharHeight();
+
+            // Title
+            u8g2.drawStr(
+                0,
+                8,
+                menu->title()
+            );
+
+            u8g2.drawHLine(
+                0,
+                10,
+                128
+            );
+
+            for (
+                uint8_t i = 0;
+                i < menu->count();
+                ++i
+            ) {
+                const MenuItem& item =
+                    menu->item(i);
+
+                const uint8_t y =
+                    FIRST_ROW +
+                    (i * ROW_HEIGHT);
+
+                const bool selected =
+                    i ==
+                    menuManager.selectedIndex();
+
+                if (
+                    item.type ==
+                    MenuType::SEPARATOR
+                ) {
+                    u8g2.drawHLine(
+                        0,
+                        y - 6,
+                        128
+                    );
+
+                    continue;
+                }
+
+                if (selected) {
+                    u8g2.drawStr(
+                        0,
+                        y,
+                        ">"
+                    );
+                }
+
+                if (item.label) {
+                    u8g2.drawStr(
+                        8,
+                        y,
+                        item.label
+                    );
+                }
+
+                if (
+                    !item.descriptor ||
+                    !item.value.ptr
+                ) {
+                    continue;
+                }
+
+                char buffer[24];
+
+                const char* value =
+                    item.descriptor->format(
+                        item.value,
+                        buffer,
+                        sizeof(buffer)
+                    );
+
+                if (!value) {
+                    continue;
+                }
+
+                const uint8_t valueWidth =
+                    u8g2.getStrWidth(
+                        value
+                    );
+
+                const uint8_t valueX =
+                    128 -
+                    valueWidth;
+
+                if (
+                    selected &&
+                    menuManager.isEditing()
+                ) {
+                    u8g2.drawStr(
+                        valueX - 6,
+                        y,
+                        "["
+                    );
+
+                    u8g2.drawStr(
+                        valueX,
+                        y,
+                        value
+                    );
+
+                    u8g2.drawStr(
+                        124,
+                        y,
+                        "]"
+                    );
+                } else {
+                    u8g2.drawStr(
+                        valueX,
+                        y,
+                        value
+                    );
+                }
+            }
+        }
 
     protected:
-        MenuManager menuManager;
+        MenuManager& menuManager;
+};
+
+class ConfirmScreen : public Screen
+{
+    using Screen::Screen;
+
+    public:
+        virtual void drawConfirm()
+        {
+            if (uiState.uiOverlay == UIOverlay::Confirm) {
+                drawConfirm();
+                u8g2.sendBuffer();
+            }
+        }
 };

@@ -81,7 +81,7 @@ class Menu {
             return addItem(menuItem);
         }
 
-        bool addEnum(const char* label, uint8_t* value, const EnumDescriptor* descriptor)
+        bool addEnum(const char* label, int8_t* value, const EnumDescriptor* descriptor)
         {
             MenuItem menuItem = MenuItem();
             menuItem.label = label;
