@@ -55,9 +55,18 @@ public:
         switch (event.control)
         {
             case ControlId::Fn2:
-                layerContext.menuManager.back();
+            {
+                bool root = layerContext.menuManager.back();
+
+                if (!root) {
+                    if (uiState.workspace == Workspace::InstrumentMenu) {
+                        uiState.workspace = Workspace::Sequencer;
+                        uiState.uiOverlay = UIOverlay::None;
+                    }
+                }
 
                 break;
+            }
 
             case ControlId::Fn3:
                 layerContext.menuManager.enter();

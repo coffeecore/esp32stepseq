@@ -19,7 +19,7 @@ namespace Constants
   constexpr uint8_t SCREEN_WIDTH = 128;
   constexpr uint8_t  SCREEN_HEIGHT = 64;
 
-  constexpr uint16_t MAX_SAMPLES = 255;
+  constexpr uint16_t MY_MAX_SAMPLES = 255;
 
 
   template<typename T, size_t N>

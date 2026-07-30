@@ -84,3 +84,55 @@ Input/
     InputContext.h     // InputContext + FnState
     ModalState.h       // ModalState
 ```
+
+
+
+```cpp
+class InstrumentList
+{
+private:
+    Instrument instruments[MAX_INSTRUMENTS];
+    uint8_t count = 0;
+
+public:
+    bool insert(uint8_t index, const Instrument& instrument)
+    {
+        if (count >= MAX_INSTRUMENTS)
+            return false;
+
+        if (index > count)
+            index = count;
+
+        for (int i = count; i > index; --i)
+            instruments[i] = instruments[i - 1];
+
+        instruments[index] = instrument;
+        count++;
+
+        return true;
+    }
+
+    bool remove(uint8_t index)
+    {
+        if (index >= count)
+            return false;
+
+        for (uint8_t i = index; i < count - 1; ++i)
+            instruments[i] = instruments[i + 1];
+
+        count--;
+
+        return true;
+    }
+
+    uint8_t size() const
+    {
+        return count;
+    }
+
+    Instrument& operator[](uint8_t index)
+    {
+        return instruments[index];
+    }
+};
+```

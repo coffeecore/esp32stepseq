@@ -46,6 +46,7 @@ union MenuValue {
 using IntFormatCallback   = void (*)(char*, size_t, int32_t);
 using FloatFormatCallback = void (*)(char*, size_t, float);
 using BoolFormatCallback  = const char* (*)(bool);
+using EnumFormatCallback = const char* (*)(int8_t);
 
 // Une entree d'un menu ENUM : la valeur brute stockee (doit correspondre a
 // l'underlying type de ton enum, caste en uint8_t) + le texte affiche.
@@ -214,9 +215,10 @@ struct FloatDescriptor : MenuDescriptor {
 struct EnumDescriptor : MenuDescriptor {
     const EnumOption* options;
     uint8_t count;
+    EnumFormatCallback formatter;
 
-    constexpr EnumDescriptor(const EnumOption* o, uint8_t c)
-        : MenuDescriptor(MenuType::ENUM), options(o), count(c) {}
+    constexpr EnumDescriptor(const EnumOption* o, uint8_t c, EnumFormatCallback f = nullptr)
+        : MenuDescriptor(MenuType::ENUM), options(o), count(c), formatter(f) {}
 
     void next(MenuValue v) const override
     {
@@ -254,7 +256,15 @@ struct EnumDescriptor : MenuDescriptor {
 
     const char* format(MenuValue v, char*, size_t) const override
     {
-        if (!v.enumeration || !options) {
+        if (!v.enumeration) {
+            return "?";
+        }
+
+        if (formatter) {
+            return formatter(*v.enumeration);
+        }
+
+         if (!options) {
             return "?";
         }
 

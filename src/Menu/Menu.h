@@ -17,6 +17,11 @@ class Menu {
             _count = 0;
         }
 
+        void setTitle(const char* title)
+        {
+            _title = title;
+        }
+
         // Ajoute un item "brut" deja construit. Retourne false si le menu
         // est plein (16 items atteints) plutot que de deborder silencieusement.
         bool addItem(const MenuItem& menuItem)
@@ -33,12 +38,13 @@ class Menu {
         // --- Helpers de construction, un par type d'item ---
         // Chacun construit le MenuItem correspondant et l'ajoute via addItem().
 
-        bool addAction(const char* label, MenuCallback menuCallback)
+        bool addAction(const char* label, MenuCallback menuCallback, void* context = nullptr)
         {
             MenuItem menuItem = MenuItem();
             menuItem.label = label;
             menuItem.type = MenuType::ACTION;
             menuItem.callback = menuCallback;
+            menuItem.context = context;
 
             return addItem(menuItem);
         }

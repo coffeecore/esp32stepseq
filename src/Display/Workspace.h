@@ -5,7 +5,9 @@
 enum class Workspace
 {
     Sequencer,
-    Instrument
+    InstrumentMenu,
+    InstrumentAdsr
+
 };
 
 enum class UIOverlay : uint8_t

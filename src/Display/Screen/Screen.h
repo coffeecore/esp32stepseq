@@ -19,6 +19,18 @@ public:
     }
 
     virtual void draw() = 0;
+
+    // Cycle de vie optionnel, appele par DisplayEngine a chaque fois que
+    // ui.uiOverlay change (quel que soit l'overlay, Menu, Confirm, etc.),
+    // que l'ecran actif change en meme temps ou non. No-op par defaut :
+    // un ecran qui n'en a pas besoin (SequencerScreen par ex.) n'a rien
+    // a faire. `overlay` precise CE QUI est quitte / entre, a l'ecran de
+    // filtrer s'il ne s'interesse qu'a un overlay en particulier.
+    // Un MenuScreen qui edite des valeurs via des copies locales (cas des
+    // enums, cf. InstrumentScreen) surchargera onEnter() pour initialiser
+    // ces copies et onExit() pour les reporter vers l'objet reel.
+    virtual void onEnter(UIOverlay overlay) {}
+    virtual void onExit(UIOverlay overlay) {}
 };
 
 class MenuScreen : public Screen
@@ -134,7 +146,7 @@ class MenuScreen : public Screen
                     );
 
                 const uint8_t valueX =
-                    128 -
+                    127 -
                     valueWidth;
 
                 if (

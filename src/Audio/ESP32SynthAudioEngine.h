@@ -178,7 +178,13 @@ class ESP32SynthAudioEngine : public IAudioEngine
             synth.setWave(voice, WAVE_SAMPLE);
             synth.setSample(voice, sampleId, inst.sampleLoop, 0, 0);
 
-            synth.setEnv(voice, inst.adsr.attackMs, inst.adsr.decayMs, inst.adsr.sustainLvl, inst.adsr.releaseMs);
+            synth.setEnv(
+                voice,
+                inst.adsr.state & ATTACK ? inst.adsr.attackMs : 0,
+                inst.adsr.state & DECAY ? inst.adsr.decayMs : 0,
+                inst.adsr.state & SUSTAIN ? inst.adsr.sustainLvl : 255,
+                inst.adsr.state & RELEASE ? inst.adsr.releaseMs : 0
+            );
         }
 
         void applyCommands(uint8_t voice, const PlayNoteRequest& request)

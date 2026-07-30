@@ -7,7 +7,8 @@ class Sequencer;
 
 #include "Screen/Screen.h"
 #include "Screen/SequencerScreen.h"
-#include "Screen/InstrumentScreen.h"
+#include "Screen/InstrumentMenuScreen.h"
+#include "Screen/InstrumentAdsrScreen.h"
 #include "Audio/IAudioEngine.h"
 
 class DisplayEngine
@@ -17,7 +18,8 @@ class DisplayEngine
         UIState& ui;
         UIOverlay previousOverlay;
         SequencerScreen sequencerScreen;
-        InstrumentScreen instrumentScreen;
+        InstrumentMenuScreen instrumentMenuScreen;
+        InstrumentAdsrScreen instrumentAdsrScreen;
         Screen* currentScreen = nullptr;
         TaskHandle_t taskHandle = nullptr;
 
@@ -26,7 +28,8 @@ class DisplayEngine
             ui(uiState),
             previousOverlay(uiState.uiOverlay),
             sequencerScreen(uiState, seq, u8g2, audioEngine),
-            instrumentScreen(uiState, seq, u8g2, audioEngine, menuManager)
+            instrumentMenuScreen(uiState, seq, u8g2, audioEngine, menuManager),
+            instrumentAdsrScreen(uiState, seq, u8g2, audioEngine, menuManager)
             
         {
             currentScreen = &sequencerScreen;
@@ -47,23 +50,36 @@ class DisplayEngine
                     nextScreen = &sequencerScreen;
                     break;
 
-                case Workspace::Instrument:
-                    nextScreen = &instrumentScreen;
+                case Workspace::InstrumentMenu:
+                    nextScreen = &instrumentMenuScreen;
+                    break;
+
+                case Workspace::InstrumentAdsr:
+                    nextScreen = &instrumentAdsrScreen;
                     break;
             }
 
-            if (nextScreen == currentScreen) {
+            const bool screenChanged = (nextScreen != currentScreen);
+            const bool overlayChanged = (previousOverlay != ui.uiOverlay);
+
+            if (!screenChanged && !overlayChanged) {
                 return;
             }
 
-            currentScreen = nextScreen;
+            // L'overlay a change (quel qu'il soit) : l'ecran courant est
+            // notifie qu'il en sort AVANT qu'on ne bascule currentScreen,
+            // que ce basculement ait lieu ou non. Chaque ecran filtre en
+            // interne sur l'overlay qui l'interesse (cf. InstrumentMenuScreen).
+            if (overlayChanged && currentScreen) {
+                currentScreen->onExit(previousOverlay);
+            }
 
-            if (
-                currentScreen == &instrumentScreen &&
-                ui.uiOverlay == UIOverlay::Menu &&
-                previousOverlay != UIOverlay::Menu
-            ) {
-                instrumentScreen.open();
+            if (screenChanged) {
+                currentScreen = nextScreen;
+            }
+
+            if (overlayChanged) {
+                currentScreen->onEnter(ui.uiOverlay);
             }
 
             previousOverlay = ui.uiOverlay;

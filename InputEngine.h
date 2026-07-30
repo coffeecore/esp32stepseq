@@ -142,6 +142,7 @@ class InputEngine
                 // au même layer même si le layer actif change entre-temps.
                 if (fn >= 0) {
                     pressedLayer[fn] = currentLayer;
+                    currentLayer->onButtonPressed(event);
                 }
 
                 if (isStep(event.control))
@@ -168,10 +169,10 @@ class InputEngine
                 if (fn >= 0)
                 {
                     if (!ctx.fnState[fn].consumed) {
-                        if (pressedLayer[fn]) {
+                        if (pressedLayer[fn] && pressedLayer[fn]->wantsButtonHold(event)) {
                             pressedLayer[fn]->onButtonHold(event);
+                            ctx.fnState[fn].holdTriggered = true;
                         }
-                        ctx.fnState[fn].holdTriggered = true;
                     }
                 }
 

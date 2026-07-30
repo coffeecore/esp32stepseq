@@ -51,7 +51,7 @@ public:
                 break;
 
             case ControlId::Fn3:
-                uiState.workspace = Workspace::Instrument;
+                uiState.workspace = Workspace::InstrumentMenu;
                 uiState.uiOverlay = UIOverlay::Menu;
 
                 break;

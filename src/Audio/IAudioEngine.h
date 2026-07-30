@@ -11,12 +11,21 @@ enum class InstrumentSource : uint8_t
     Sample
 };
 
-struct ADSR
+using AdsrState = uint8_t;
+
+constexpr AdsrState ATTACK = 1u << 0;
+constexpr AdsrState DECAY = 1u << 1;
+constexpr AdsrState SUSTAIN = 1u << 2;
+constexpr AdsrState RELEASE = 1u << 3;
+
+struct Adsr
 {
     uint16_t attackMs = 5;
     uint16_t decayMs = 150;
     uint8_t sustainLvl = 200;
     uint16_t releaseMs = 300;
+
+    AdsrState state = 0;
 };
 
 // TODO: remplace par ta vraie structure/banque d'instruments. Elle n'existait
@@ -27,7 +36,7 @@ struct MyInstrument
 {
     InstrumentSource source = InstrumentSource::Wave;
 
-    ADSR adsr;
+    Adsr adsr;
 
     // -- Cas Wave --
     WaveType wave = WAVE_SINE;

@@ -8,7 +8,7 @@ class MenuManager;
 // Callback pour un item de type ACTION : recoit le MenuManager pour
 // pouvoir, si besoin, naviguer depuis le callback lui-meme (ex: pousser
 // un autre menu, revenir en arriere...).
-using MenuCallback = void (*)(MenuManager&);
+using MenuCallback = void (*)(void* context, MenuManager&);
 
 // Un item de menu. Selon `type`, seuls certains champs ont un sens :
 //   ACTION    -> callback
@@ -22,4 +22,6 @@ struct MenuItem {
     const MenuDescriptor* descriptor = nullptr;
     MenuCallback callback = nullptr;
     Menu* submenu = nullptr;
+
+    void* context = nullptr;
 };

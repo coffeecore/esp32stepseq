@@ -45,7 +45,7 @@ RotaryEncoder rotaryEncoders;
 
 DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine, menuManager);
 
-InputEngine inputEngine(sequencer, rotaryEncoders, uiState, menuManager);
+InputEngine inputEngine(sequencer, rotaryEncoders, uiState, menuManager, esp32SynthAudioEngine);
 
 Input input(sequencer, inputEngine, rotaryEncoders);
 
@@ -99,7 +99,7 @@ void setup() {
     sampleLoader.addSample(3, "kick_44100hz", "", kick_44100hz_data, kick_44100hz_len, kick_44100hz_rate);
 
 
-    ADSR adsr;
+    Adsr adsr;
 
     for (uint8_t i = 0;i<12;i++) {
         MyInstrument myInstrument = {

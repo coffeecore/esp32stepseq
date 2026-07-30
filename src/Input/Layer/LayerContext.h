@@ -14,11 +14,13 @@ class LayerContext
         RotaryEncoder& rotaryEncoders;
         Sequencer& sequencer;
         MenuManager& menuManager;
+        IAudioEngine& audioEngine;
 
-        LayerContext(Sequencer& sequencer, RotaryEncoder& rotaryEncoders, MenuManager& menuManager)
+        LayerContext(Sequencer& sequencer, RotaryEncoder& rotaryEncoders, MenuManager& menuManager, IAudioEngine& audioEngine)
             : rotaryEncoders(rotaryEncoders),
             sequencer(sequencer),
-            menuManager(menuManager)
+            menuManager(menuManager),
+            audioEngine(audioEngine)
         {
         }
 };

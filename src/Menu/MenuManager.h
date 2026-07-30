@@ -133,7 +133,7 @@ class MenuManager {
             switch (i->type) {
                 case MenuType::ACTION:
                     if (i->callback) {
-                        i->callback(*this);
+                        i->callback( i->context, *this);
                     }
 
                     return true;
