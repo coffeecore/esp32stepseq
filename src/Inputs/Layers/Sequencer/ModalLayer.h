@@ -1,0 +1,45 @@
+#pragma once
+
+#include "Inputs/Layers/Layer.h"
+#include "Inputs/InputMode.h"
+
+namespace Inputs::Layers::Sequencer
+{
+class ModalLayer : public Layer
+{
+    using Layer::Layer;
+
+public:
+    void onButtonTap(const InputEvent& event) override
+    {
+        switch (event.control) {
+            case ControlId::Fn0:
+                switch (inputContext.confirmAction) {
+                    case ConfirmAction::DeleteQuarterNote:
+                        layerContext.sequencer.removeQuarterNote();
+
+                        break;
+                }
+
+                inputContext.confirmAction = ConfirmAction::None;
+                uiState.closeConfirm();
+
+                break;
+
+            case ControlId::Fn1:
+                inputContext.confirmAction = ConfirmAction::None;
+                uiState.closeConfirm();
+
+                break;
+
+            case ControlId::Fn2:
+                // ...
+                break;
+
+            case ControlId::Fn3:
+                // ...
+                break;
+        }
+    }
+};
+} // namespace Input::Layer::Sequencer

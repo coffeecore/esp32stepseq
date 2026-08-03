@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Input/InputMode.h"
-
+namespace Display
+{
 enum class Workspace
 {
     Sequencer,
@@ -41,7 +41,6 @@ struct UIState
 
     // ModalState modal = ModalState::None;
 
-
     uint8_t selectedInstrument = 0;
 
     uint8_t displayedTrack = 0;
@@ -78,5 +77,5 @@ struct UIState
             xTaskNotifyGive(displayTask);
         }
     }
-
 };
+} // namespace Display

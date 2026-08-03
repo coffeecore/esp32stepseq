@@ -9,21 +9,17 @@
 inline char notesStr[128][6];
 inline uint32_t notesFreq[128];
 
-
 inline void midiToName(uint8_t midi, char* buffer, size_t bufferSize)
 {
-    static const char* names[] =
-    {
-        "C", "C#", "D", "D#", "E", "F",
-        "F#", "G", "G#", "A", "A#", "B"
-    };
+    static const char* names[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 
     const char* note = names[midi % 12];
     int8_t octave = (midi / 12) - 1;
 
     if (note[1] == '\0') {
         snprintf(buffer, bufferSize, "%s-%d", note, octave);
-    } else {
+    }
+    else {
         snprintf(buffer, bufferSize, "%s%d", note, octave);
     }
 }
@@ -39,8 +35,7 @@ inline void initNotes()
 
     initialized = true;
 
-    for (uint8_t i = 0; i < 128; i++)
-    {
+    for (uint8_t i = 0; i < 128; i++) {
         midiToName(i, notesStr[i], sizeof(notesStr[i]));
         notesFreq[i] = midiToFreq(i);
     }

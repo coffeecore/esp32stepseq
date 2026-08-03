@@ -15,7 +15,8 @@ using MenuCallback = void (*)(void* context, MenuManager&);
 //   SUBMENU   -> submenu
 //   BOOL/INT/FLOAT/ENUM -> value + descriptor
 //   LABEL/SEPARATOR -> seulement label (le reste reste a nullptr)
-struct MenuItem {
+struct MenuItem
+{
     const char* label = nullptr;
     MenuType type = MenuType::LABEL;
     MenuValue value;

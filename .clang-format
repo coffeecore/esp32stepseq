@@ -1,0 +1,93 @@
+---
+Language: Cpp
+
+# Base
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Longueur de ligne
+ColumnLimit: 120
+
+# Accolades
+BreakBeforeBraces: Custom
+
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: false
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+
+# if (cond) {
+SpaceBeforeParens: ControlStatements
+
+# Espaces
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceInEmptyParentheses: false
+SpaceBeforeAssignmentOperators: true
+
+# Pointeurs
+PointerAlignment: Left
+
+# Références
+ReferenceAlignment: Left
+
+# Includes
+SortIncludes: false
+
+# switch
+IndentCaseLabels: true
+
+# Constructeurs
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+
+# Fonctions
+AllowShortFunctionsOnASingleLine: None
+
+# if/for/while
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Lambdas
+AllowShortLambdasOnASingleLine: Inline
+
+# Classes / structs
+AccessModifierOffset: -4
+
+# C++
+Standard: Latest
+
+# Divers
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+ReflowComments: false
+
+# Templates
+AlwaysBreakTemplateDeclarations: Yes
+
+# Alignements
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands: true
+
+# Binaires
+BreakBeforeBinaryOperators: NonAssignment
+
+# Namespace
+NamespaceIndentation: All
+
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+SeparateDefinitionBlocks: Always

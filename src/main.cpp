@@ -4,10 +4,10 @@
 #include "Sequencer/Sequencer.h"
 #include "Sequencer/HTimer.h"
 #include "AiEsp32RotaryEncoder.h"
-#include "Input/Input.h"
+#include "Inputs/Input.h"
 #include "Display/DisplayEngine.h"
-#include "Input/InputEngine.h"
-#include "Input/RotaryEncoder.h"
+#include "Inputs/InputEngine.h"
+#include "Inputs/RotaryEncoder.h"
 #include "Display/Workspace.h"
 #include "Audio/ESP32SynthAudioEngine.h"
 #include "Audio/Notes.h"
@@ -25,13 +25,11 @@ ESP32Synth synth;
 
 // U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ 21, /* data=*/ 22);
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(
-    U8G2_R0,
-    U8X8_PIN_NONE
-);
-HTimer hTimer;
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
-UIState uiState;
+Sequencer::HTimer hTimer;
+
+Display::UIState uiState;
 
 MenuManager menuManager;
 
@@ -39,17 +37,18 @@ SampleLoader sampleLoader;
 
 ESP32SynthAudioEngine esp32SynthAudioEngine(synth, sampleLoader);
 
-Sequencer sequencer(hTimer, uiState, esp32SynthAudioEngine);
+Sequencer::Sequencer sequencer(hTimer, uiState, esp32SynthAudioEngine);
 
-RotaryEncoder rotaryEncoders;
+Inputs::RotaryEncoder rotaryEncoders;
 
-DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine, menuManager);
+Display::DisplayEngine displayEngine(u8g2, uiState, sequencer, esp32SynthAudioEngine, menuManager);
 
-InputEngine inputEngine(sequencer, rotaryEncoders, uiState, menuManager, esp32SynthAudioEngine);
+Inputs::InputEngine inputEngine(sequencer, rotaryEncoders, uiState, menuManager, esp32SynthAudioEngine);
 
-Input input(sequencer, inputEngine, rotaryEncoders);
+Inputs::Input input(sequencer, inputEngine, rotaryEncoders);
 
-void setup_audio() {
+void setup_audio()
+{
     // Standard I2S Mode (External DAC like PCM5102A - BCK, WS, DATA)
     // Parameters: dataPin, mode, clkPin, wsPin, BitDepth
     // synth.begin(4, 15, 2, I2S_32BIT);
@@ -64,18 +63,19 @@ void setup_audio() {
     synth.setMasterVolume(255);
 }
 
-void setup() {
+void setup()
+{
     Serial.begin(115200);
 
-    Wire.begin(21,22);
+    Wire.begin(21, 22);
 
-// for (uint8_t addr = 1; addr < 127; addr++) {
-//     Wire.beginTransmission(addr);
-//     if (Wire.endTransmission() == 0) {
-//         Serial.printf("I2C found: 0x%02X\n", addr);
-//     }
-// }
-// return;
+    // for (uint8_t addr = 1; addr < 127; addr++) {
+    //     Wire.beginTransmission(addr);
+    //     if (Wire.endTransmission() == 0) {
+    //         Serial.printf("I2C found: 0x%02X\n", addr);
+    //     }
+    // }
+    // return;
 
     Wire.begin();
     Wire.setClock(100000);
@@ -83,7 +83,8 @@ void setup() {
     if (!u8g2.begin()) {
         Serial.println("OLED failed");
 
-        while (true);
+        while (true)
+            ;
     }
 
     initNotes();
@@ -93,27 +94,19 @@ void setup() {
 
     sampleLoader.begin();
 
-    sampleLoader.addSample(0, "closed_hihat_44100hz", "", closed_hihat_44100hz_data, closed_hihat_44100hz_len, closed_hihat_44100hz_rate);
+    sampleLoader.addSample(0, "closed_hihat_44100hz", "", closed_hihat_44100hz_data, closed_hihat_44100hz_len,
+                           closed_hihat_44100hz_rate);
     sampleLoader.addSample(1, "clap_44100hz", "", clap_44100hz_data, clap_44100hz_len, clap_44100hz_rate);
     sampleLoader.addSample(2, "snare_44100hz", "", snare_44100hz_data, snare_44100hz_len, snare_44100hz_rate);
     sampleLoader.addSample(3, "kick_44100hz", "", kick_44100hz_data, kick_44100hz_len, kick_44100hz_rate);
 
-
     Adsr adsr;
 
-    for (uint8_t i = 0;i<12;i++) {
-        MyInstrument myInstrument = {
-            InstrumentSource::Sample,
-            adsr,
-            WAVE_SAMPLE,
-            44000,
-            LOOP_OFF,
-            i%4
-        };
+    for (uint8_t i = 0; i < 12; i++) {
+        MyInstrument myInstrument = {InstrumentSource::Sample, adsr, WAVE_SAMPLE, 44000, LOOP_OFF, i % 4};
 
         esp32SynthAudioEngine.addInstrument(myInstrument);
     }
-
 
     sequencer.begin();
 
@@ -124,7 +117,7 @@ void setup() {
     sequencer.addTrack();
     sequencer.addTrack();
     sequencer.addTrack();
-    
+
     sequencer.addQuarterNote();
     // sequencer.addQuarterNote();
     // sequencer.addQuarterNote();
@@ -138,5 +131,6 @@ void setup() {
     input.begin();
 }
 
-void loop() {
+void loop()
+{
 }

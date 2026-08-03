@@ -28,10 +28,10 @@ struct Command
 // Objet neutre qui sort du séquenceur : le moteur audio ne connaît pas Step/Track.
 struct PlayNoteRequest
 {
-    uint8_t note = 60;       // note MIDI (0-127), PAS une fréquence
-    uint8_t velocity = 255;  // 0-255
-    uint8_t instrument = 0;  // index dans la banque d'instruments (0..NUMBER_OF_INSTRUMENTS-1)
-    uint16_t gate = 0;       // durée en ticks (le séquenceur gère le stop, l'audio l'ignore)
+    uint8_t note = 60;      // note MIDI (0-127), PAS une fréquence
+    uint8_t velocity = 255; // 0-255
+    uint8_t instrument = 0; // index dans la banque d'instruments (0..NUMBER_OF_INSTRUMENTS-1)
+    uint16_t gate = 0;      // durée en ticks (le séquenceur gère le stop, l'audio l'ignore)
 
     const Command* commands = nullptr;
     uint8_t commandCount = 0;

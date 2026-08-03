@@ -8,7 +8,10 @@
 #include "Audio/VoiceHandle.h"
 #include "Audio/PlayNoteRequest.h"
 
-typedef struct {
+namespace Sequencer
+{
+typedef struct
+{
     bool state = false;
 
     uint8_t note = 60;
@@ -22,7 +25,8 @@ typedef struct {
     uint8_t commandCount = 0;
 } Step;
 
-typedef struct {
+typedef struct
+{
     uint8_t stepIndex = 0;
     uint8_t ticksByStep = 6;
 
@@ -33,14 +37,16 @@ typedef struct {
 
 } QuarterNote;
 
-typedef struct {
+typedef struct
+{
     int8_t remainingTicks = 0;
     // Step* step = nullptr;
     bool active = false;
     VoiceHandle voiceHandle;
 } TrackNoteState;
 
-typedef struct {
+typedef struct
+{
     QuarterNote quarterNotes[Constants::NUMBER_OF_QUARTER_NOTES];
     int8_t transpose = -12;
     uint8_t volume = 255;
@@ -58,478 +64,449 @@ enum class PlayState
 
 class Sequencer
 {
-    private:
-        HTimer& timer;
-        UIState& uiState;
-        IAudioEngine& audioEngine;
-        uint8_t currentTick = 0;
-        TaskHandle_t xHandle = nullptr;
-        static Sequencer* instance;
-        uint8_t currentPattern = 0;
-        uint8_t currentQuarterNote = 0;
-        int8_t nextPattern = 0;
-        TrackNoteState trackNoteStates[Constants::NUMBER_OF_TRACKS];
+private:
+    HTimer& timer;
+    Display::UIState& uiState;
+    IAudioEngine& audioEngine;
+    uint8_t currentTick = 0;
+    TaskHandle_t xHandle = nullptr;
+    static Sequencer* instance;
+    uint8_t currentPattern = 0;
+    uint8_t currentQuarterNote = 0;
+    int8_t nextPattern = 0;
+    TrackNoteState trackNoteStates[Constants::NUMBER_OF_TRACKS];
 
-    public:
-        uint8_t volume = 127;
-        uint16_t bpm = Constants::DEFAULT_BPM;
-        uint8_t trackCounts = 0;
-        uint8_t quarterNoteCounts = 0;
-        PlayState playState = PlayState::Play;
-        Track tracks[Constants::NUMBER_OF_TRACKS];
-        uint8_t ppqn = Constants::DEFAULT_PPQN;
+public:
+    uint8_t volume = 127;
+    uint16_t bpm = Constants::DEFAULT_BPM;
+    uint8_t trackCounts = 0;
+    uint8_t quarterNoteCounts = 0;
+    PlayState playState = PlayState::Play;
+    Track tracks[Constants::NUMBER_OF_TRACKS];
+    uint8_t ppqn = Constants::DEFAULT_PPQN;
 
-        Sequencer(HTimer& _timer, UIState& _uiState, IAudioEngine& _audioEngine):
-            timer(_timer),
-            uiState(_uiState),
-            audioEngine(_audioEngine)
-        {
+    Sequencer(HTimer& _timer, Display::UIState& _uiState, IAudioEngine& _audioEngine)
+        : timer(_timer)
+        , uiState(_uiState)
+        , audioEngine(_audioEngine)
+    {
+    }
+
+    void begin()
+    {
+        Serial.println("Start sequencer");
+        instance = this;
+
+        xTaskCreatePinnedToCore(sequencerTask, "SeqTaskTimer", 8192, this, 2, &xHandle, 0);
+        timer.setCallback(onTimerStatic);
+        timer.begin(instance->computeTickDurationInMicroSeconds());
+        Serial.println("Started sequencer");
+    }
+
+    static void IRAM_ATTR onTimerStatic()
+    {
+        if (instance == nullptr) {
+            return;
         }
 
-        void begin()
-        {
-            Serial.println("Start sequencer");
-            instance = this;
+        TaskHandle_t handle = instance->xHandle;
 
-            xTaskCreatePinnedToCore(
-                sequencerTask,
-                "SeqTaskTimer",
-                8192,
-                this,
-                2,
-                &xHandle,
-                0
-            );
-            timer.setCallback(onTimerStatic);
-            timer.begin(instance->computeTickDurationInMicroSeconds());
-            Serial.println("Started sequencer");
+        if (handle == nullptr) {
+            return;
         }
 
-        static void IRAM_ATTR onTimerStatic()
-        {
-             if (instance == nullptr) {
-                return;
-            }
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-            TaskHandle_t handle = instance->xHandle;
+        vTaskNotifyGiveFromISR(handle, &xHigherPriorityTaskWoken);
 
-            if (handle == nullptr) {
-                return;
-            }
+        if (xHigherPriorityTaskWoken) {
+            portYIELD_FROM_ISR();
+        }
+    }
 
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint64_t computeTickDurationInMicroSeconds()
+    {
+        return 60 * 1000 * 1000 / (ppqn * bpm);
+    }
 
-            vTaskNotifyGiveFromISR(handle, &xHigherPriorityTaskWoken);
+    void setStepNoteMidi(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
+    {
+        Step& step = tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
 
-            if (xHigherPriorityTaskWoken) {
-                portYIELD_FROM_ISR();
-            }
+        step.note = value;
+        // midiToName(value, step.noteStr, sizeof(step.noteStr));
+        // step.noteFreq = midiToFreq(value);
+    }
+
+    void setStepNote(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t note, int8_t octave)
+    {
+        Step& step = tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
+
+        uint8_t value = note + (octave + 1) * 12;
+
+        step.note = value;
+        // midiToName(value, step.noteStr, sizeof(step.noteStr));
+        // step.noteFreq = midiToFreq(value);
+    }
+
+    void setStepLength(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
+    {
+        QuarterNote& qn = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+        Step& step = qn.steps[stepIndex];
+
+        if (value > qn.ticksByStep || value == 0) {
+            return;
         }
 
-        uint64_t computeTickDurationInMicroSeconds()
-        {
-            return 60 * 1000 * 1000 / (ppqn * bpm);
+        step.length = value;
+    }
+
+    void setStepInstrument(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, int8_t value)
+    {
+        QuarterNote& qn = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+        Step& step = qn.steps[stepIndex];
+
+        if (value >= 12 || value < -1) {
+            return;
         }
 
-        void setStepNoteMidi(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
-        {
-            Step& step = tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
+        step.instrument = value;
+    }
 
-            step.note = value;
-            // midiToName(value, step.noteStr, sizeof(step.noteStr));
-            // step.noteFreq = midiToFreq(value);
+    void setBpm(uint16_t _bpm)
+    {
+        if (_bpm == 0) {
+            _bpm = 1;
         }
 
-        void setStepNote(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t note, int8_t octave)
-        {
-            Step& step = tracks[trackIndex].quarterNotes[quarterNoteIndex].steps[stepIndex];
+        bpm = _bpm;
 
-            uint8_t value = note + (octave+1) * 12;
+        timer.setTickDurationInMicroSeconds(computeTickDurationInMicroSeconds());
+    }
 
-            step.note = value;
-            // midiToName(value, step.noteStr, sizeof(step.noteStr));
-            // step.noteFreq = midiToFreq(value);
+    void setPpqn(uint8_t _ppqn)
+    {
+        if (_ppqn == 0) {
+            _ppqn = 12;
         }
 
-        void setStepLength(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, uint8_t value)
-        {
-            QuarterNote& qn = tracks[trackIndex].quarterNotes[quarterNoteIndex];
-            Step& step = qn.steps[stepIndex];
+        ppqn = _ppqn;
 
-            if (value > qn.ticksByStep || value == 0) {
-                return;
-            }
+        timer.setTickDurationInMicroSeconds(computeTickDurationInMicroSeconds());
+    }
 
-            step.length = value;
+    void setQuarterNoteStepsCount(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t length)
+    {
+        if (trackIndex >= trackCounts) {
+            return;
         }
 
-        void setStepInstrument(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex, int8_t value)
-        {
-            QuarterNote& qn = tracks[trackIndex].quarterNotes[quarterNoteIndex];
-            Step& step = qn.steps[stepIndex];
-
-            if (value >= 12 || value < -1) {
-                return;
-            }
-
-            step.instrument = value;
+        if (quarterNoteIndex >= quarterNoteCounts) {
+            return;
         }
 
-        void setBpm(uint16_t _bpm)
-        {
-            if (_bpm == 0) {
-                _bpm = 1;
-            }
+        QuarterNote& quarterNote = tracks[trackIndex].quarterNotes[quarterNoteIndex];
 
-            bpm = _bpm;
+        quarterNote.stepsCount = length;
+    }
 
-            timer.setTickDurationInMicroSeconds(computeTickDurationInMicroSeconds());
+    void setVolume(uint8_t _volume)
+    {
+        volume = _volume;
+    }
+
+    void togglePause()
+    {
+        if (playState == PlayState::Play) {
+            playState = PlayState::Pause;
+
+            return;
         }
 
-        void setPpqn(uint8_t _ppqn)
-        {
-            if (_ppqn == 0) {
-                _ppqn = 12;
-            }
+        playState = PlayState::Play;
+    }
 
-            ppqn = _ppqn;
+    void toggleStop()
+    {
+        if (playState != PlayState::Stop) {
+            playState = PlayState::Stop;
 
-            timer.setTickDurationInMicroSeconds(computeTickDurationInMicroSeconds());
+            currentTick = 0;
+            currentQuarterNote = 0;
+
+            return;
+        }
+    }
+
+    void addTrack()
+    {
+        if (trackCounts >= Constants::NUMBER_OF_TRACKS) {
+            return;
         }
 
-        void setQuarterNoteStepsCount(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t length)
-        {
-            if (trackIndex >= trackCounts) {
-                return;
-            }
+        trackCounts++;
+    }
 
-            if (quarterNoteIndex >= quarterNoteCounts) {
-                return;
-            }
+    void addQuarterNote()
+    {
+        if (quarterNoteCounts < Constants::NUMBER_OF_QUARTER_NOTES) {
+            quarterNoteCounts++;
+        }
+    }
 
-            QuarterNote& quarterNote = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+    void removeQuarterNote()
+    {
+        if (quarterNoteCounts > 0) {
+            quarterNoteCounts--;
+        }
+    }
 
-            quarterNote.stepsCount = length;
+    void addStep(uint8_t trackIndex, uint8_t quarterNoteIndex)
+    {
+        if (trackIndex >= trackCounts) {
+            return;
+        }
+        if (quarterNoteIndex >= quarterNoteCounts) {
+            return;
         }
 
-        void setVolume(uint8_t _volume)
-        {
-            volume = _volume;
+        QuarterNote& quarterNote = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+
+        if (quarterNote.stepsCount >= Constants::NUMBER_OF_STEPS) {
+            return;
+        }
+        quarterNote.stepsCount++;
+
+        quarterNote.ticksByStep = ppqn / quarterNote.stepsCount;
+
+        for (uint8_t i = 0; i < quarterNote.stepsCount; i++) {
+            Step& step = quarterNote.steps[i];
+
+            step.length = quarterNote.ticksByStep;
+        }
+    }
+
+    void setTrackVolume(uint8_t _trackIndex, uint8_t _volume)
+    {
+        if (_trackIndex >= trackCounts) {
+            return;
         }
 
-        void togglePause()
-        {
-            if (playState == PlayState::Play) {
-                playState = PlayState::Pause;
+        Track& track = tracks[_trackIndex];
 
-                return;
-            }
+        track.volume = _volume;
+    }
 
-            playState = PlayState::Play;
+    void setTrackTranspose(uint8_t _trackIndex, int8_t _transpose)
+    {
+        if (_trackIndex >= trackCounts) {
+            return;
         }
 
-        void toggleStop()
-        {
-            if (playState != PlayState::Stop) {
-                playState = PlayState::Stop;
-
-                currentTick = 0;
-                currentQuarterNote = 0;
-
-                return;
-            }
+        if (_transpose < -12) {
+            _transpose = -12;
         }
 
-        void addTrack()
-        {
-            if (trackCounts >= Constants::NUMBER_OF_TRACKS) {
-                return;
-            }
-
-            trackCounts++;
+        if (_transpose > 12) {
+            _transpose = 12;
         }
 
-        void addQuarterNote()
-        {
-            if (quarterNoteCounts < Constants::NUMBER_OF_QUARTER_NOTES) {
-                quarterNoteCounts++;
-            }
+        Track& track = tracks[_trackIndex];
+
+        track.transpose = _transpose;
+    }
+
+    void setTrackInstrument(uint8_t _trackIndex, int8_t _instrument)
+    {
+        if (_trackIndex >= trackCounts) {
+            return;
         }
 
-        void removeQuarterNote()
-        {
-            if (quarterNoteCounts > 0) {
-                quarterNoteCounts--;
-            }
+        if (_instrument >= 12) {
+            return;
         }
 
-        void addStep(uint8_t trackIndex, uint8_t quarterNoteIndex)
-        {
-            if (trackIndex >= trackCounts) {
-                return;
-            }
-            if (quarterNoteIndex >= quarterNoteCounts) {
-                return;
-            }
+        Track& track = tracks[_trackIndex];
 
-            QuarterNote& quarterNote = tracks[trackIndex].quarterNotes[quarterNoteIndex];
+        track.instrument = _instrument;
+    }
 
-            if (quarterNote.stepsCount >= Constants::NUMBER_OF_STEPS) {
-                return;
-            }
-            quarterNote.stepsCount++;
-
-            quarterNote.ticksByStep = ppqn / quarterNote.stepsCount;
-
-            for (uint8_t i=0;i<quarterNote.stepsCount;i++) {
-                Step& step = quarterNote.steps[i];
-
-                step.length = quarterNote.ticksByStep;
-            }
+    void toggleTrackMute(uint8_t _trackIndex)
+    {
+        if (_trackIndex >= trackCounts) {
+            return;
         }
 
-        void setTrackVolume(uint8_t _trackIndex, uint8_t _volume)
-        {
-            if (_trackIndex >= trackCounts) {
-                return;
-            }
+        Track& track = tracks[_trackIndex];
 
-            Track& track = tracks[_trackIndex];
+        track.mute = !track.mute;
+    }
 
-            track.volume = _volume;
+    void toggleStep(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
+    {
+        if (quarterNoteIndex >= quarterNoteCounts) {
+            return;
         }
 
-        void setTrackTranspose(uint8_t _trackIndex, int8_t _transpose)
-        {
-            if (_trackIndex >= trackCounts) {
-                return;
-            }
+        QuarterNote& quarterNote = tracks[trackIndex].quarterNotes[quarterNoteIndex];
 
-            if (_transpose < -12) {
-                _transpose = -12;
-            }
-
-             if (_transpose > 12) {
-                _transpose = 12;
-            }
-
-            Track& track = tracks[_trackIndex];
-
-            track.transpose = _transpose;
+        if (quarterNote.stepsCount <= stepIndex) {
+            return;
         }
 
-        void setTrackInstrument(uint8_t _trackIndex, int8_t _instrument)
-        {
-            if (_trackIndex >= trackCounts) {
-                return;
-            }
+        Step& step = quarterNote.steps[stepIndex];
 
-            if (_instrument >= 12) {
-                return;
-            }
+        step.state = !step.state;
+    }
 
-            Track& track = tracks[_trackIndex];
+    static void sequencerTask(void* pvParameters)
+    {
+        Sequencer* seq = static_cast<Sequencer*>(pvParameters);
+        for (;;) {
+            uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-            track.instrument = _instrument;
-        }
-
-        void toggleTrackMute(uint8_t _trackIndex)
-        {
-            if (_trackIndex >= trackCounts) {
-                return;
-            }
-
-            Track& track = tracks[_trackIndex];
-
-            track.mute = !track.mute;
-        }
-
-        void toggleStep(uint8_t trackIndex, uint8_t quarterNoteIndex, uint8_t stepIndex)
-        {
-            if (quarterNoteIndex >= quarterNoteCounts) {
-                return;
-            }
-        
-            QuarterNote& quarterNote = tracks[trackIndex].quarterNotes[quarterNoteIndex];
-
-            if (quarterNote.stepsCount <= stepIndex) {
-                return;
-            }
-
-            Step& step = quarterNote.steps[stepIndex];
-
-            step.state = !step.state;
-        }
-
-        static void sequencerTask(void* pvParameters)
-        {
-            Sequencer* seq = static_cast<Sequencer*>(pvParameters);
-            for (;;) {
-                uint32_t pending = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-                while (pending--)
-                {
-                    if (seq->playState != PlayState::Play) {
-                        continue;
-                    }
-
-                    bool quarterChanged = false;
-                     if (seq->currentTick >= seq->ppqn) {
-                        seq->currentTick = 0;
-                        seq->currentQuarterNote++;
-                        quarterChanged = true;
-
-                        if (seq->currentQuarterNote >= seq->quarterNoteCounts) {
-                            seq->currentQuarterNote = 0;
-                        }
-                    }
-
-                    if (quarterChanged) {
-                        for (uint8_t i = 0; i < seq->trackCounts; i++) {
-                            QuarterNote& quarterNote = seq->tracks[i].quarterNotes[seq->currentQuarterNote];
-
-                            quarterNote.stepIndex = 0;
-                            quarterNote.nextStepTick = 0;
-                        }
-                    }
-                    if (seq->uiState.autoScroll) {
-                        seq->uiState.selectedQuarterNote = seq->currentQuarterNote;
-                        seq->uiState.requestRedraw();
-                    }
-
-                    uint8_t tick = seq->currentTick;
-                    seq->currentTick++;
-
-                    seq->process(tick);
-                }
-            }
-        }
-
-        void process(uint8_t tick)
-        {
-            processNoteOffs();
-
-            for (uint8_t i = 0; i < trackCounts; i++) {
-                Track& track = tracks[i];
-                processPattern(tick, i, track);
-            }
-        }
-
-        bool processPattern(uint8_t tick, uint8_t trackIndex, Track& track)
-        {
-            QuarterNote& quarterNote = track.quarterNotes[currentQuarterNote];
-
-            int8_t diff = (tick - quarterNote.nextStepTick);
-
-            if (diff < 0) {
-                return false;
-            }
-
-            quarterNote.nextStepTick += quarterNote.ticksByStep;
-
-            if (diff > quarterNote.ticksByStep * 2) {
-                quarterNote.nextStepTick = tick;
-            }
-
-            return advancePattern(trackIndex, quarterNote);
-        }
-
-        bool advancePattern(uint8_t trackIndex, QuarterNote& quarterNote)
-        {
-            Track& track = tracks[trackIndex];
-            uint8_t current = quarterNote.stepIndex;
-            Step& step = quarterNote.steps[current];
-
-            if (uiState.autoScroll) {
-                uiState.selectedStep = current;
-                uiState.requestRedraw();
-            }
-
-            current++;
-            bool wrap = (current >= quarterNote.stepsCount);
-
-            if (wrap) {
-                current = 0;
-            }
-
-            quarterNote.stepIndex = current;
-
-            if (step.state) {
-                TrackNoteState& trackNoteState = trackNoteStates[trackIndex];
-                
-                if (trackNoteState.active) {
-                    triggerStepOff(trackNoteState);
-                }
-                trackNoteState.remainingTicks = step.length;
-                trackNoteState.active = true;
-
-                triggerStepOn(step, track, trackNoteState);
-            }
-
-            return wrap;
-        }
-
-        void processNoteOffs()
-        {
-            for (uint8_t i = 0; i < trackCounts; i++) {
-
-                TrackNoteState& trackNoteState = trackNoteStates[i];
-                if (!trackNoteState.active) {
+            while (pending--) {
+                if (seq->playState != PlayState::Play) {
                     continue;
                 }
 
-                trackNoteState.remainingTicks--;
+                bool quarterChanged = false;
+                if (seq->currentTick >= seq->ppqn) {
+                    seq->currentTick = 0;
+                    seq->currentQuarterNote++;
+                    quarterChanged = true;
 
-                if (trackNoteState.remainingTicks <= 0) {
-                    triggerStepOff(trackNoteState);
-                    trackNoteState.active = false;
+                    if (seq->currentQuarterNote >= seq->quarterNoteCounts) {
+                        seq->currentQuarterNote = 0;
+                    }
                 }
+
+                if (quarterChanged) {
+                    for (uint8_t i = 0; i < seq->trackCounts; i++) {
+                        QuarterNote& quarterNote = seq->tracks[i].quarterNotes[seq->currentQuarterNote];
+
+                        quarterNote.stepIndex = 0;
+                        quarterNote.nextStepTick = 0;
+                    }
+                }
+                if (seq->uiState.autoScroll) {
+                    seq->uiState.selectedQuarterNote = seq->currentQuarterNote;
+                    seq->uiState.requestRedraw();
+                }
+
+                uint8_t tick = seq->currentTick;
+                seq->currentTick++;
+
+                seq->process(tick);
             }
         }
+    }
 
-        void triggerStepOff(TrackNoteState& trackNoteState)
-        {
-            // MIDI note off / stop voice
-            Serial.print("TRIGGER NOTE OFF : ");
-            Serial.println(millis());
-            audioEngine.stop(trackNoteState.voiceHandle);
+    void process(uint8_t tick)
+    {
+        processNoteOffs();
+
+        for (uint8_t i = 0; i < trackCounts; i++) {
+            Track& track = tracks[i];
+            processPattern(tick, i, track);
+        }
+    }
+
+    bool processPattern(uint8_t tick, uint8_t trackIndex, Track& track)
+    {
+        QuarterNote& quarterNote = track.quarterNotes[currentQuarterNote];
+
+        int8_t diff = (tick - quarterNote.nextStepTick);
+
+        if (diff < 0) {
+            return false;
         }
 
+        quarterNote.nextStepTick += quarterNote.ticksByStep;
 
-        void triggerStepOn(Step& step, Track& track, TrackNoteState& trackNoteState)
-        {
-            // MIDI / GPIO / synth trigger
-            Serial.print("TRIGGER NOTE ON : ");
-            Serial.println(millis());
-
-            PlayNoteRequest request;
-            request.note = step.note;
-            request.velocity = track.volume;
-            request.instrument = step.instrument >= 0 ? step.instrument : track.instrument;
-            request.gate = step.length;
-            request.commandCount = step.commandCount;
-            request.commands = step.commands;
-            trackNoteState.voiceHandle = audioEngine.play(request);
+        if (diff > quarterNote.ticksByStep * 2) {
+            quarterNote.nextStepTick = tick;
         }
+
+        return advancePattern(trackIndex, quarterNote);
+    }
+
+    bool advancePattern(uint8_t trackIndex, QuarterNote& quarterNote)
+    {
+        Track& track = tracks[trackIndex];
+        uint8_t current = quarterNote.stepIndex;
+        Step& step = quarterNote.steps[current];
+
+        if (uiState.autoScroll) {
+            uiState.selectedStep = current;
+            uiState.requestRedraw();
+        }
+
+        current++;
+        bool wrap = (current >= quarterNote.stepsCount);
+
+        if (wrap) {
+            current = 0;
+        }
+
+        quarterNote.stepIndex = current;
+
+        if (step.state) {
+            TrackNoteState& trackNoteState = trackNoteStates[trackIndex];
+
+            if (trackNoteState.active) {
+                triggerStepOff(trackNoteState);
+            }
+            trackNoteState.remainingTicks = step.length;
+            trackNoteState.active = true;
+
+            triggerStepOn(step, track, trackNoteState);
+        }
+
+        return wrap;
+    }
+
+    void processNoteOffs()
+    {
+        for (uint8_t i = 0; i < trackCounts; i++) {
+            TrackNoteState& trackNoteState = trackNoteStates[i];
+            if (!trackNoteState.active) {
+                continue;
+            }
+
+            trackNoteState.remainingTicks--;
+
+            if (trackNoteState.remainingTicks <= 0) {
+                triggerStepOff(trackNoteState);
+                trackNoteState.active = false;
+            }
+        }
+    }
+
+    void triggerStepOff(TrackNoteState& trackNoteState)
+    {
+        // MIDI note off / stop voice
+        Serial.print("TRIGGER NOTE OFF : ");
+        Serial.println(millis());
+        audioEngine.stop(trackNoteState.voiceHandle);
+    }
+
+    void triggerStepOn(Step& step, Track& track, TrackNoteState& trackNoteState)
+    {
+        // MIDI / GPIO / synth trigger
+        Serial.print("TRIGGER NOTE ON : ");
+        Serial.println(millis());
+
+        PlayNoteRequest request;
+        request.note = step.note;
+        request.velocity = track.volume;
+        request.instrument = step.instrument >= 0 ? step.instrument : track.instrument;
+        request.gate = step.length;
+        request.commandCount = step.commandCount;
+        request.commands = step.commands;
+        trackNoteState.voiceHandle = audioEngine.play(request);
+    }
 };
 
 Sequencer* Sequencer::instance = nullptr;
-
-
-// void triggerStepOff(TrackNoteState trackNoteState)
-// {
-//     audio.stop(trackNoteState.voice);
-// }
-
-// void triggerStepOn(Step& step, Track& track)
-// {
-//     PlayNoteRequest request;
-//     request.note = step.note + track.transpose;
-//     request.velocity = track.volume;
-//     request.instrument = step.instrument >= 0 ? step.instrument : track.instrument;
-//     request.gate = step.length;
-//     // request.commands / commandCount si tu ajoutes des Command au Step
-
-//     TrackNoteState& state = trackNoteStates[trackIndex]; // adapte selon ton scope
-//     state.voice = audio.play(request);
-// }
+}

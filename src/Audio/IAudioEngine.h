@@ -1,5 +1,5 @@
 #pragma once
- #include "ESP32Synth.h"
+#include "ESP32Synth.h"
 
 #include "PlayNoteRequest.h"
 #include "VoiceHandle.h"
@@ -47,22 +47,20 @@ struct MyInstrument
     uint16_t sampleId = 0;
 };
 
-
 class IAudioEngine
 {
-    public:
-        // SampleLoader& sampleLoader;
-        MyInstrument instruments[Constants::NUMBER_OF_INSTRUMENTS];
-        uint8_t instrumentsCount = 0;
+public:
+    // SampleLoader& sampleLoader;
+    MyInstrument instruments[Constants::NUMBER_OF_INSTRUMENTS];
+    uint8_t instrumentsCount = 0;
 
-        virtual ~IAudioEngine() = default;
- 
-        virtual void begin() = 0;
- 
-        virtual VoiceHandle play(const PlayNoteRequest& request) = 0;
- 
-        virtual void stop(VoiceHandle voice) = 0;
+    virtual ~IAudioEngine() = default;
 
-        virtual void addSample(uint16_t sampleId) = 0;
+    virtual void begin() = 0;
+
+    virtual VoiceHandle play(const PlayNoteRequest& request) = 0;
+
+    virtual void stop(VoiceHandle voice) = 0;
+
+    virtual void addSample(uint16_t sampleId) = 0;
 };
- 
