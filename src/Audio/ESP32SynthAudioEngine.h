@@ -12,6 +12,12 @@
 
 const SampleZone closed_hihat_44100hz[] = {{c0, g10, 0, c4}};
 
+struct RegisteredSample
+{
+    uint16_t sampleId;
+    uint8_t esp32Id;
+};
+
 class ESP32SynthAudioEngine : public IAudioEngine
 {
 public:
@@ -21,8 +27,8 @@ public:
     {
     }
 
-    uint8_t nextSample = 0;
-    int16_t samples[MAX_SAMPLES];
+    RegisteredSample registered[MAX_SAMPLES];
+    uint8_t registeredCount = 0;
 
     void begin() override
     {
@@ -32,27 +38,26 @@ public:
         }
     }
 
-    uint8_t allocateSample()
+    int findRegisteredSample(uint16_t sampleId)
     {
-        for (uint8_t i = 0; i < MAX_SAMPLES; i++) {
-            for (uint8_t j = 0; j < Constants::NUMBER_OF_INSTRUMENTS; j++) {
-                if (instruments[j].sampleId != samples[i]) {
-                    return i;
-                }
-            }
+        for (uint8_t i = 0; i < registeredCount; i++) {
+            if (registered[i].sampleId == sampleId)
+                return registered[i].esp32Id;
         }
 
-        return 0;
+        return -1;
     }
 
-    virtual void addSample(uint16_t sampleId)
+    void addSample(uint16_t sampleId)
     {
-        uint16_t esp32SampleId = allocateSample();
+        if (findRegisteredSample(sampleId) >= 0)
+            return;
 
-        samples[esp32SampleId] = sampleId;
+        uint8_t esp32Id = registeredCount++;
 
-        synth.registerSample(esp32SampleId, sampleLoader.getData(sampleId), sampleLoader.getLength(sampleId),
-                             sampleLoader.getRate(sampleId), c4);
+        registered[esp32Id] = {sampleId, esp32Id};
+
+        synth.registerSample(esp32Id, sampleLoader.getData(sampleId), sampleLoader.getLength(sampleId), sampleLoader.getRate(sampleId), c4);
     }
 
     void addInstrument(const MyInstrument& instrument)
@@ -167,21 +172,13 @@ private:
 
     void applyInstrumentSample(uint8_t voice, const MyInstrument& inst)
     {
-        uint8_t sampleId = 0;
-        for (uint8_t i = 0; i < MAX_SAMPLES; i++) {
-            if (samples[i] == inst.sampleId) {
-                sampleId = i;
+        uint8_t esp32SytnhSampleId = findRegisteredSample(inst.sampleId);
 
-                break;
-            }
-        }
         synth.setWave(voice, WAVE_SAMPLE);
-        synth.setSample(voice, sampleId, inst.sampleLoop, 0, 0);
+        synth.setSample(voice, esp32SytnhSampleId, inst.sampleLoop, 0, 0);
 
-        synth.setEnv(voice, inst.adsr.state & ATTACK ? inst.adsr.attackMs : 0,
-                     inst.adsr.state & DECAY ? inst.adsr.decayMs : 0,
-                     inst.adsr.state & SUSTAIN ? inst.adsr.sustainLvl : 255,
-                     inst.adsr.state & RELEASE ? inst.adsr.releaseMs : 0);
+        synth.setEnv(voice, inst.adsr.state & ATTACK ? inst.adsr.attackMs : 0, inst.adsr.state & DECAY ? inst.adsr.decayMs : 0,
+                     inst.adsr.state & SUSTAIN ? inst.adsr.sustainLvl : 255, inst.adsr.state & RELEASE ? inst.adsr.releaseMs : 0);
     }
 
     void applyCommands(uint8_t voice, const PlayNoteRequest& request)

@@ -77,7 +77,7 @@ void setup()
     // }
     // return;
 
-    Wire.begin();
+    // Wire.begin();
     Wire.setClock(100000);
 
     if (!u8g2.begin()) {
@@ -88,6 +88,8 @@ void setup()
     }
 
     initNotes();
+
+    setup_audio();
 
     synth.noteOn(0, notesFreq[60], 255);
     synth.noteOff(0);
@@ -108,8 +110,6 @@ void setup()
         esp32SynthAudioEngine.addInstrument(myInstrument);
     }
 
-    sequencer.begin();
-
     Serial.println("Add track and quarter notes");
 
     sequencer.addTrack();
@@ -119,8 +119,8 @@ void setup()
     sequencer.addTrack();
 
     sequencer.addQuarterNote();
-    // sequencer.addQuarterNote();
-    // sequencer.addQuarterNote();
+
+    sequencer.begin();
 
     displayEngine.begin();
 

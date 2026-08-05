@@ -11,7 +11,7 @@ TabWidth: 4
 UseTab: Never
 
 # Longueur de ligne
-ColumnLimit: 120
+ColumnLimit: 160
 
 # Accolades
 BreakBeforeBraces: Custom

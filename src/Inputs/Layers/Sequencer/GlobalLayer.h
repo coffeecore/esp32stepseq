@@ -7,78 +7,45 @@
 
 namespace Inputs::Layers::Sequencer
 {
-class GlobalLayer : public Common::GlobalLayer
-{
-public:
-    using Common::GlobalLayer::GlobalLayer;
-
-    // void applyEncoderMapping() override
-    // {
-    //     layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
-    //     layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 1, 999, false);
-    // }
-
-    // void applyEncoderValues() override
-    // {
-    //     layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, layerContext.sequencer.volume);
-    //     layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, layerContext.sequencer.bpm);
-    // }
-
-    // void onEncoder(InputEvent& inputEvent) override
-    // {
-    //     if (inputEvent.control == ControlId::Encoder0) {
-    //         layerContext.sequencer.setVolume(inputEvent.value);
-    //     }
-
-    //     if (inputEvent.control == ControlId::Encoder1) {
-    //         layerContext.sequencer.setBpm(inputEvent.value);
-    //     }
-    // }
-
-    void onButtonTap(const InputEvent& event) override
+    class GlobalLayer : public Common::GlobalLayer
     {
-        switch (event.control) {
-            // case ControlId::Fn0:
-            //     layerContext.sequencer.togglePause();
+    public:
+        using Common::GlobalLayer::GlobalLayer;
 
-            //     break;
+        void onButtonTap(const InputEvent& event) override
+        {
+            switch (event.control) {
+                case ControlId::Fn2:
+                    layerContext.sequencer.toggleTrackMute(uiState.selectedTrack);
 
-            // case ControlId::Fn1:
-            //     layerContext.sequencer.addQuarterNote();
+                    return;
 
-                // break;
-            case ControlId::Fn2:
-                layerContext.sequencer.toggleTrackMute(uiState.selectedTrack);
+                case ControlId::Fn3:
+                    uiState.workspace = Display::Workspace::InstrumentMenu;
+                    uiState.uiOverlay = Display::UIOverlay::Menu;
 
-                return;
+                    return;
+            }
 
-            case ControlId::Fn3:
-                uiState.workspace = Display::Workspace::InstrumentMenu;
-                uiState.uiOverlay = Display::UIOverlay::Menu;
-
-                return;
+            Common::GlobalLayer::onButtonTap(event);
         }
-    }
 
-    void onButtonHold(const InputEvent& event) override
-    {
-        switch (event.control) {
-            // case ControlId::Fn0:
-            //     layerContext.sequencer.toggleStop();
+        void onButtonHold(const InputEvent& event) override
+        {
+            switch (event.control) {
+                case ControlId::Fn1:
+                    inputContext.confirmAction = ConfirmAction::DeleteQuarterNote;
+                    uiState.openConfirm("Delete quarter note ?");
 
-            //     break;
+                    return;
 
-            case ControlId::Fn1:
-                inputContext.confirmAction = ConfirmAction::DeleteQuarterNote;
-                uiState.openConfirm("Delete quarter note ?");
+                case ControlId::Fn2:
+                    uiState.autoScroll = !uiState.autoScroll;
 
-                return;
+                    return;
+            }
 
-            case ControlId::Fn2:
-                uiState.autoScroll = !uiState.autoScroll;
-
-                return;
+            Common::GlobalLayer::onButtonTap(event);
         }
-    }
-};
-} // namespace Input::Layer::Sequencer
+    };
+} // namespace Inputs::Layers::Sequencer

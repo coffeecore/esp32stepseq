@@ -8,48 +8,25 @@
 namespace Inputs::Layers::InstrumentAdsr
 {
 
-class GlobalLayer : public Common::GlobalLayer
-{
-public:
-    using Common::GlobalLayer::GlobalLayer;
-
-    // void applyEncoderMapping() override
-    // {
-    //     layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder0, 0, 255, false);
-    //     layerContext.rotaryEncoders.setEncoderBoundaries(ControlId::Encoder1, 1, 999, false);
-    // }
-
-    // void applyEncoderValues() override
-    // {
-    //     layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder0, layerContext.sequencer.volume);
-    //     layerContext.rotaryEncoders.syncEncoder(ControlId::Encoder1, layerContext.sequencer.bpm);
-    // }
-
-    // void onEncoder(InputEvent& inputEvent) override
-    // {
-    //     if (inputEvent.control == ControlId::Encoder0) {
-    //         layerContext.sequencer.setVolume(inputEvent.value);
-    //     }
-
-    //     if (inputEvent.control == ControlId::Encoder1) {
-    //         layerContext.sequencer.setBpm(inputEvent.value);
-    //     }
-    // }
-
-    void onButtonTap(const InputEvent& event) override
+    class GlobalLayer : public Common::GlobalLayer
     {
-        switch (event.control) {
-            case ControlId::Fn2:
-                layerContext.menuManager.back();
+    public:
+        using Common::GlobalLayer::GlobalLayer;
 
-                return;
+        void onButtonTap(const InputEvent& event) override
+        {
+            switch (event.control) {
+                case ControlId::Fn2:
+                    layerContext.menuManager.back();
+
+                    return;
+            }
+
+            Common::GlobalLayer::onButtonTap(event);
         }
 
-        
-    }
-
-    void onStepPressed(const InputEvent& inputEvent) override
-    {
-    }
-};
-} // namespace Input::Layer::InstrumentAdsr
+        void onStepPressed(const InputEvent& inputEvent) override
+        {
+        }
+    };
+} // namespace Inputs::Layers::InstrumentAdsr
