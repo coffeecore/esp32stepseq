@@ -63,4 +63,6 @@ public:
     virtual void stop(VoiceHandle voice) = 0;
 
     virtual void addSample(uint16_t sampleId) = 0;
+
+    virtual void updateInstrument(uint8_t index, const MyInstrument& instrument) = 0;
 };

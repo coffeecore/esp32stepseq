@@ -15,6 +15,10 @@ namespace Inputs::Layers::Sequencer
         void onButtonTap(const InputEvent& event) override
         {
             switch (event.control) {
+                case ControlId::Fn1:
+                    layerContext.sequencer.addQuarterNote();
+
+                    return;
                 case ControlId::Fn2:
                     layerContext.sequencer.toggleTrackMute(uiState.selectedTrack);
 

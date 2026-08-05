@@ -143,7 +143,7 @@ namespace Sequencer
 
             QuarterNote& quarterNote = track.quarterNotes[quarterNoteIndex];
 
-            if (stepIndex >= quarterNote.stepIndex) {
+            if (stepIndex >= quarterNote.stepsCount) {
                 return;
             }
 
@@ -168,7 +168,7 @@ namespace Sequencer
 
             QuarterNote& quarterNote = track.quarterNotes[quarterNoteIndex];
 
-            if (stepIndex >= quarterNote.stepIndex) {
+            if (stepIndex >= quarterNote.stepsCount) {
                 return;
             }
 
@@ -194,7 +194,7 @@ namespace Sequencer
 
             QuarterNote& quarterNote = track.quarterNotes[quarterNoteIndex];
 
-            if (stepIndex >= quarterNote.stepIndex || value > quarterNote.ticksByStep || value == 0) {
+            if (stepIndex >= quarterNote.stepsCount || value > quarterNote.ticksByStep || value == 0) {
                 return;
             }
 
@@ -221,7 +221,7 @@ namespace Sequencer
 
             QuarterNote& quarterNote = track.quarterNotes[quarterNoteIndex];
 
-            if (stepIndex >= quarterNote.stepIndex) {
+            if (stepIndex >= quarterNote.stepsCount) {
                 return;
             }
 
@@ -426,11 +426,9 @@ namespace Sequencer
 
             QuarterNote& quarterNote = track.quarterNotes[quarterNoteIndex];
 
-            if (stepIndex >= quarterNote.stepIndex) {
+            if (stepIndex >= quarterNote.stepsCount) {
                 return;
             }
-
-            Step& step = quarterNote.steps[stepIndex];
 
             Step& step = quarterNote.steps[stepIndex];
 
@@ -574,9 +572,19 @@ namespace Sequencer
             // MIDI / GPIO / synth trigger
             Serial.print("TRIGGER NOTE ON : ");
             Serial.println(millis());
+            if (track.mute) {
+                return;
+            }
 
             PlayNoteRequest request;
-            request.note = step.note + track.transpose;
+            int8_t note = step.note + track.transpose;
+            if (note < 0) {
+                note = 0;
+            }
+            if (note > 127) {
+                note = 127;
+            }
+            request.note = note;
             request.velocity = track.volume;
             request.instrument = step.instrument >= 0 ? step.instrument : track.instrument;
             request.gate = step.length;

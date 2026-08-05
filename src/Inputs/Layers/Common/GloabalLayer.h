@@ -41,12 +41,6 @@ namespace Inputs::Layers::Common
                     layerContext.sequencer.togglePause();
 
                     return;
-
-                case ControlId::Fn1:
-                    uiState.workspace = Display::Workspace::Sequencer;
-                    uiState.uiOverlay = Display::UIOverlay::None;
-
-                    return;
             }
         }
 

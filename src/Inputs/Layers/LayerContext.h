@@ -15,11 +15,11 @@ class LayerContext
 {
 public:
     RotaryEncoder& rotaryEncoders;
-    Sequencer::Sequencer& sequencer;
+    ::Sequencer::Sequencer& sequencer;
     MenuManager& menuManager;
     IAudioEngine& audioEngine;
 
-    LayerContext(Sequencer::Sequencer& sequencer, RotaryEncoder& rotaryEncoders, MenuManager& menuManager,
+    LayerContext(::Sequencer::Sequencer& sequencer, RotaryEncoder& rotaryEncoders, MenuManager& menuManager,
                  IAudioEngine& audioEngine)
         : rotaryEncoders(rotaryEncoders)
         , sequencer(sequencer)

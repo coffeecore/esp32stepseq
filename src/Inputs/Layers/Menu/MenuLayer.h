@@ -57,6 +57,11 @@ public:
     {
         switch (event.control)
         {
+            case ControlId::Fn1:
+                uiState.workspace = Display::Workspace::Sequencer;
+                uiState.uiOverlay = Display::UIOverlay::None;
+
+                return;
             case ControlId::Fn2:
             {
                 bool root = layerContext.menuManager.back();

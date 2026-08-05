@@ -27,6 +27,29 @@ public:
     {
     }
 
+    // Si un jour tu trouves que cette recherche est trop fréquente, tu peux ajouter un cache dans ESP32SynthAudioEngine, sans toucher à MyInstrument.
+
+    // Par exemple :
+
+    // ```cpp
+    // uint8_t instrumentToEsp32Sample[Constants::NUMBER_OF_INSTRUMENTS];
+    // ```
+
+    // Lors de addInstrument() :
+
+    // ```cpp
+    // instrumentToEsp32Sample[instrumentsCount] =
+    //     registerSample(instrument.sampleId);
+    // ```
+
+    // Puis :
+
+    // ```cpp
+    // synth.setSample(voice, instrumentToEsp32Sample[instrumentIndex], ...);
+    // ```
+
+    // Cette table reste totalement privée au backend ESP32Synth. Si tu écris un autre moteur audio, il aura sa propre structure interne et MyInstrument ne changera pas.
+
     RegisteredSample registered[MAX_SAMPLES];
     uint8_t registeredCount = 0;
 
@@ -38,7 +61,7 @@ public:
         }
     }
 
-    int findRegisteredSample(uint16_t sampleId)
+    int8_t findRegisteredSample(uint16_t sampleId)
     {
         for (uint8_t i = 0; i < registeredCount; i++) {
             if (registered[i].sampleId == sampleId)
@@ -48,16 +71,33 @@ public:
         return -1;
     }
 
+    void updateInstrument(uint8_t index, const MyInstrument& instrument)
+    {
+        instruments[index] = instrument;
+
+        if (instrument.source == InstrumentSource::Sample)
+            addSample(instrument.sampleId);
+    }
+
     void addSample(uint16_t sampleId)
     {
-        if (findRegisteredSample(sampleId) >= 0)
-            return;
+        MySample* sample = sampleLoader.getSampleById(sampleId);
 
+        if (sample == nullptr) {
+            return;
+        }
+        if (findRegisteredSample(sampleId) >= 0) {
+            return;
+        }
+
+        if (registeredCount >= MAX_SAMPLES) {
+            return;
+        }
         uint8_t esp32Id = registeredCount++;
 
         registered[esp32Id] = {sampleId, esp32Id};
 
-        synth.registerSample(esp32Id, sampleLoader.getData(sampleId), sampleLoader.getLength(sampleId), sampleLoader.getRate(sampleId), c4);
+        synth.registerSample(esp32Id, sample->data, sample->length, sample->rate, c4);
     }
 
     void addInstrument(const MyInstrument& instrument)
@@ -67,7 +107,9 @@ public:
         }
 
         instruments[instrumentsCount] = instrument;
-        addSample(instrument.sampleId);
+        if (instrument.source == InstrumentSource::Sample) {
+            addSample(instrument.sampleId);
+        }
         instrumentsCount++;
     }
 
@@ -95,7 +137,10 @@ public:
             // Attendu : un identifiant de sample pré-chargé (ex: via
             // synth.loadSample(index, data, length) fait une fois au
             // setup()), puis ici on le déclenche sur la voix :
-            applyInstrumentSample(voice, inst);
+            if (!applyInstrumentSample(voice, inst)) {
+                return VoiceHandle{};
+            }
+
             applyCommands(voice, request);
 
             uint32_t freqCentiHz = notesFreq[request.note];
@@ -170,15 +215,21 @@ private:
         synth.setEnv(voice, inst.adsr.attackMs, inst.adsr.decayMs, inst.adsr.sustainLvl, inst.adsr.releaseMs);
     }
 
-    void applyInstrumentSample(uint8_t voice, const MyInstrument& inst)
+    bool applyInstrumentSample(uint8_t voice, const MyInstrument& inst)
     {
-        uint8_t esp32SytnhSampleId = findRegisteredSample(inst.sampleId);
+        int8_t esp32SynthSampleId = findRegisteredSample(inst.sampleId);
+
+        if (esp32SynthSampleId < 0) {
+            return false;
+        }
 
         synth.setWave(voice, WAVE_SAMPLE);
-        synth.setSample(voice, esp32SytnhSampleId, inst.sampleLoop, 0, 0);
+        synth.setSample(voice, esp32SynthSampleId, inst.sampleLoop, 0, 0);
 
         synth.setEnv(voice, inst.adsr.state & ATTACK ? inst.adsr.attackMs : 0, inst.adsr.state & DECAY ? inst.adsr.decayMs : 0,
                      inst.adsr.state & SUSTAIN ? inst.adsr.sustainLvl : 255, inst.adsr.state & RELEASE ? inst.adsr.releaseMs : 0);
+
+        return true;
     }
 
     void applyCommands(uint8_t voice, const PlayNoteRequest& request)

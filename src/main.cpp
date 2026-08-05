@@ -89,10 +89,10 @@ void setup()
 
     initNotes();
 
-    setup_audio();
+    // setup_audio();
 
-    synth.noteOn(0, notesFreq[60], 255);
-    synth.noteOff(0);
+    // synth.noteOn(0, notesFreq[60], 255);
+    // synth.noteOff(0);
 
     sampleLoader.begin();
 

@@ -7,7 +7,7 @@ Aucune modification du code source n'a été effectuée.
 OK 1. `setup_audio()` n'est jamais appelée : le synthé n'exécute donc pas `synth.begin(...)`. C'est probablement bloquant pour l'audio. Ajouter simplement `setup_audio();` au début de `setup()`.
    - Fichier : `src/main.cpp:50`
 
-2. Le chargement des samples a un bug de sélection : `allocateSample()` retourne presque toujours le slot 0, car le test est inversé/placé dans une double boucle. Les 12 instruments risquent donc d'écraser le même sample enregistré.
+OK 2. Le chargement des samples a un bug de sélection : `allocateSample()` retourne presque toujours le slot 0, car le test est inversé/placé dans une double boucle. Les 12 instruments risquent donc d'écraser le même sample enregistré.
    - Fichier : `src/Audio/ESP32SynthAudioEngine.h:35`
 
 OK 3. Changer le nombre de pas d'une noire met uniquement à jour `stepsCount`, sans recalculer `ticksByStep` ni les longueurs des notes. L'UI peut afficher 1-4 pas, mais le timing reste celui d'avant.
@@ -16,7 +16,7 @@ OK 3. Changer le nombre de pas d'une noire met uniquement à jour `stepsCount`, 
 OK 4. Plusieurs setters de step accèdent aux tableaux sans valider `trackIndex`, `quarterNoteIndex` et `stepIndex`. `toggleStep()` oublie notamment le contrôle de piste. Un petit garde-fou éviterait les accès hors limites depuis l'UI.
    - Fichier : `src/Sequencer/Sequencer.h:132`
 
-5. `mute` et `transpose` sont modifiables et affichés, mais ne sont pas appliqués au déclenchement audio : `process()` joue toutes les pistes et `triggerStepOn()` transmet `step.note` sans transposition.
+OK 5. `mute` et `transpose` sont modifiables et affichés, mais ne sont pas appliqués au déclenchement audio : `process()` joue toutes les pistes et `triggerStepOn()` transmet `step.note` sans transposition.
    - Fichier : `src/Sequencer/Sequencer.h:405`
 
 ## Secondaire
@@ -36,4 +36,4 @@ Le projet est utilisé avec PIOArduino dans VS Code. La compilation n'a simpleme
 
 
 
-odex resume 019fcd15-5c19-7bc1-ab75-45c52fec3b32
+codex resume 019fcd15-5c19-7bc1-ab75-45c52fec3b32

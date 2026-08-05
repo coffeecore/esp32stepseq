@@ -130,10 +130,18 @@ class ConfirmScreen : public Screen
 public:
     virtual void drawConfirm()
     {
-        if (uiState.uiOverlay == UIOverlay::Confirm) {
-            drawConfirm();
-            u8g2.sendBuffer();
+        if (uiState.uiOverlay != UIOverlay::Confirm) {
+            return;
         }
+ 
+        u8g2.drawFrame(10, 18, 108, 28);
+ 
+        u8g2.setFont(u8g2_font_5x8_tf);
+ 
+        u8g2.drawStr(20, 32, uiState.confirm.text);
+ 
+        u8g2.drawStr(20, 45, "YES");
+        u8g2.drawStr(80, 45, "NO");
     }
 };
 }
