@@ -62,6 +62,19 @@ public:
         return &m->item(_stack[_depth].selected);
     }
 
+    // Force la selection courante a `index` (clampe si hors bornes).
+    // Utile pour restaurer une position apres un aller-retour qui a du
+    // rappeler begin() (ex: revenir d'un sous-workspace comme l'ADSR).
+    void setSelected(uint8_t index)
+    {
+        if (!_hasItems()) {
+            return;
+        }
+
+        uint8_t count = currentMenu()->count();
+        _stack[_depth].selected = index < count ? index : count - 1;
+    }
+
     uint8_t selectedIndex() const
     {
         return _stack[_depth].selected;

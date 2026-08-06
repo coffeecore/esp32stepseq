@@ -17,7 +17,8 @@ namespace Inputs::Layers::InstrumentAdsr
         {
             switch (event.control) {
                 case ControlId::Fn2:
-                    layerContext.menuManager.back();
+                    uiState.workspace = Display::Workspace::InstrumentMenu;
+                    uiState.uiOverlay = Display::UIOverlay::Menu;
 
                     return;
             }

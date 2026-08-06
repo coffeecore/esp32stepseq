@@ -48,6 +48,12 @@ namespace Display::Screens
 
         char title[32];
 
+        // Position a restaurer au prochain onEnter(Menu), positionnee par
+        // openAdsr() juste avant de quitter vers le workspace ADSR. -1 =
+        // rien a restaurer (entree "fraiche" dans le menu, ex: depuis le
+        // Sequencer), donc selection par defaut (0) via begin().
+        int16_t _pendingSelection = -1;
+
         InstrumentMenuScreen(UIState& u, Sequencer::Sequencer& s, U8G2& d, IAudioEngine& a, MenuManager& m)
             : MenuScreen(u, s, d, a, m)
             , menu()
@@ -77,6 +83,11 @@ namespace Display::Screens
 
             buildMenu();
             menuManager.begin(&menu);
+
+            if (_pendingSelection >= 0) {
+                menuManager.setSelected(static_cast<uint8_t>(_pendingSelection));
+                _pendingSelection = -1;
+            }
         }
 
         // Appele par DisplayEngine a chaque changement d'overlay. On ne
@@ -153,7 +164,9 @@ namespace Display::Screens
         static void openAdsr(void* ctx, MenuManager& menuManager)
         {
             InstrumentMenuScreen* screen = static_cast<InstrumentMenuScreen*>(ctx);
+            screen->_pendingSelection = menuManager.selectedIndex();
             screen->uiState.workspace = Workspace::InstrumentAdsr;
+            screen->uiState.uiOverlay = UIOverlay::None;
         }
     };
 } // namespace Display::Screens
